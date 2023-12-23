@@ -6,6 +6,7 @@ from hyperSE import HyperSE
 from geoopt.optim import RiemannianAdam
 from eval_utils import cluster_metrics
 from plot_utils import plot_leaves
+from decode import construct_tree
 from dataset import load_data
 from logger import create_logger
 
@@ -25,7 +26,7 @@ class Exp:
 
         for exp_iter in range(self.configs.exp_iters):
             logger.info(f"\ntrain iters {exp_iter}")
-            model = HyperSE(num_nodes=data['num_nodes'], height=4).to(device)
+            model = HyperSE(num_nodes=data['num_nodes'], height=self.configs.height).to(device)
             optimizer = RiemannianAdam(model.parameters(), lr=self.configs.lr, weight_decay=self.configs.w_decay)
 
             logger.info("--------------------------Training Start-------------------------")
@@ -42,8 +43,11 @@ class Exp:
 
                 logger.info(f"Epoch {epoch}: train_loss={loss.item()}")
 
-            embeddings = model().detach().cpu().numpy()
-            plot_leaves(embeddings, data['labels'])
+            embeddings = model().detach().cpu()
+            tree = construct_tree([i for i in range(data['num_nodes'])],
+                                  embeddings, K=self.configs.height,
+                                  c=1/self.configs.height, k=1)
+            plot_leaves(embeddings.numpy(), data['labels'])
             
             #     if epoch % self.configs.eval_freq == 0:
             #         logger.info("---------------Evaluation Start-----------------")
