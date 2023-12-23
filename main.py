@@ -27,9 +27,9 @@ parser.add_argument('--log_path', type=str, default="./results/v2302152230/cls_C
 parser.add_argument('--epochs', type=int, default=1000)
 parser.add_argument('--K', type=int, default=30)
 parser.add_argument('--lr', type=float, default=0.01)
-parser.add_argument('--w_decay', type=float, default=5e-4)
+parser.add_argument('--w_decay', type=float, default=0)
 parser.add_argument('--kappa', type=float, default=-1.0, help='curvature of simple manifolds')
-parser.add_argument('--temperature', type=float, default=0.2, help='temperature of NT-Xent loss')
+parser.add_argument('--temperature', type=float, default=0.1, help='temperature of NT-Xent loss')
 parser.add_argument('--n_cluster_trials', type=int, default=5)
 
 # GPU

@@ -25,7 +25,7 @@ class Exp:
 
         for exp_iter in range(self.configs.exp_iters):
             logger.info(f"\ntrain iters {exp_iter}")
-            model = HyperSE(num_nodes=data['num_nodes']).to(device)
+            model = HyperSE(num_nodes=data['num_nodes'], height=4).to(device)
             optimizer = RiemannianAdam(model.parameters(), lr=self.configs.lr, weight_decay=self.configs.w_decay)
 
             logger.info("--------------------------Training Start-------------------------")
