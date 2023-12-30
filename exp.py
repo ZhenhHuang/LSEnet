@@ -44,9 +44,10 @@ class Exp:
                 logger.info(f"Epoch {epoch}: train_loss={loss.item()}")
 
             embeddings = model().detach().cpu()
+            plot_leaves(embeddings.numpy(), data['labels'])
             tree = construct_tree([i for i in range(data['num_nodes'])],
                                   embeddings, K=self.configs.height,
-                                  c=1/(self.configs.height + 1), k=1)
+                                  c=0.999/(self.configs.height + 1), k=1)
             plot_leaves(embeddings.numpy(), data['labels'])
             loss = model.loss(data['edge_index'], data['degrees'], data['weight'], device)
             

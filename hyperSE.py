@@ -13,10 +13,10 @@ MIN_NORM = 1e-15
 
 
 class HyperSE(nn.Module):
-    def __init__(self, num_nodes, d_hyp=2, height=2, temperature=0.1, c=0.5,
+    def __init__(self, num_nodes, d_hyp=2, height=2, temperature=0.05, c=0.5,
                  init_size=1e-3, min_size=1e-2, max_size=0.999):
         super(HyperSE, self).__init__()
-        # init_size = height / (height + 1)
+        init_size = 1.0
         self.k = torch.tensor([-1.0])
         self.num_nodes = num_nodes
         self.height = height
@@ -26,9 +26,9 @@ class HyperSE(nn.Module):
         self.embeddings.weight.data = project(
             self.scale * (2 * torch.rand(num_nodes, d_hyp) - 1), 
             k=self.k, eps=MIN_NORM)
-        self.c = 1 / (height + 1)
+        self.c = max_size / (height + 1)
         self.init_size = init_size
-        self.min_size = self.c * height
+        self.min_size = height * self.c
         self.max_size = max_size
     
     def forward(self):
@@ -62,12 +62,13 @@ class HyperSE(nn.Module):
         embedding = self.normalize(embedding)
 
         vol_G = weight.sum()
-        dist_pairs = hyp_lca(embedding[None], embedding[:, None, :], return_coord=False)
-        dist_pairs += torch.eye(self.num_nodes).to(device)
+        dist_pairs = hyp_lca(embedding[None], embedding[:, None, :], return_coord=False, proj_hyp=False)    # Euclidean circle
         ind_pairs = [torch.ones(self.num_nodes, self.num_nodes).to(device)]
         for k in range(1, self.height):
-            h = 2 * np.arctanh(k * self.c)
-            ind_pairs_k = torch.sigmoid((dist_pairs - h) / self.tau / (self.height-k))
+            radius_k = k * self.c
+            dist_pairs_inversion = radius_k ** 2 / dist_pairs
+            ratio = (radius_k - dist_pairs_inversion) / radius_k
+            ind_pairs_k = torch.sigmoid((ratio - 0.5 / k) / self.tau)
             ind_pairs.append(ind_pairs_k)
         ind_pairs.append(torch.eye(self.num_nodes).to(device))
         for k in range(1, self.height + 1):

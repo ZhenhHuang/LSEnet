@@ -32,12 +32,16 @@ def DFS_Comps(L_nodes: list, I) -> list[list]:
     return results
 
 
-def I_ij_k(L_nodes, embedding, height, k, c=0.5, epsilon=0.99, tau=0.1) -> torch.Tensor:
-    dist_pairs = hyp_lca(embedding[None], embedding[:, None, :], return_coord=False)
-    dist_pairs += torch.eye(len(L_nodes)).to(dist_pairs.device)
-    h = 2 * np.arctanh(k * c)
-    ind_pairs = torch.sigmoid((dist_pairs - h) / tau / (height - k))
-    connect = (ind_pairs > epsilon).long()
+def I_ij_k(L_nodes, embedding, height, k, c=0.5, epsilon=0.99, tau=0.05) -> torch.Tensor:
+    if k == height:
+        connect = torch.eye(len(L_nodes))
+    else:
+        dist_pairs = hyp_lca(embedding[None], embedding[:, None, :], return_coord=False, proj_hyp=False)
+        radius_k = k * c
+        dist_pairs_inversion = radius_k ** 2 / dist_pairs
+        ratio = (radius_k - dist_pairs_inversion) / radius_k
+        ind_pairs = torch.sigmoid((ratio - 0.5 / k) / tau)
+        connect = (ind_pairs > epsilon).long()
     i, j = torch.where(connect == 1)
     edges = []
     for (ii, jj) in zip(i, j):

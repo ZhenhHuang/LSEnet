@@ -38,7 +38,7 @@ def _halve(x):
     return x / (1. + torch.sqrt(1 - torch.sum(x ** 2, dim=-1, keepdim=True)))
 
 
-def hyp_lca(a, b, return_coord=True):
+def hyp_lca(a, b, return_coord=True, proj_hyp=True):
     """
     Computes projection of the origin on the geodesic between a and b, at scale c
 
@@ -51,6 +51,9 @@ def hyp_lca(a, b, return_coord=True):
     o_ref = isometric_transform(r, o_inv_ref)
     proj = _halve(o_ref)
     if not return_coord:
-        return dist0(proj, k=torch.tensor([-1.0]).to(proj.device))
+        if proj_hyp:
+            return dist0(proj, k=torch.tensor([-1.0]).to(proj.device))
+        else:
+            return proj.norm(p=2, dim=-1)
     else:
         return proj
