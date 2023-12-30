@@ -46,8 +46,9 @@ class Exp:
             embeddings = model().detach().cpu()
             tree = construct_tree([i for i in range(data['num_nodes'])],
                                   embeddings, K=self.configs.height,
-                                  c=1/self.configs.height, k=1)
+                                  c=1/(self.configs.height + 1), k=1)
             plot_leaves(embeddings.numpy(), data['labels'])
+            loss = model.loss(data['edge_index'], data['degrees'], data['weight'], device)
             
             #     if epoch % self.configs.eval_freq == 0:
             #         logger.info("---------------Evaluation Start-----------------")

@@ -2,10 +2,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from geoopt.manifolds import PoincareBall
-from geoopt.manifolds.stereographic.math import project
+from geoopt.manifolds.stereographic.math import project, dist0
 import numpy as np
 from lca import hyp_lca
 from torch_scatter import scatter_sum
+from decode import construct_tree
 
 
 MIN_NORM = 1e-15
@@ -13,8 +14,9 @@ MIN_NORM = 1e-15
 
 class HyperSE(nn.Module):
     def __init__(self, num_nodes, d_hyp=2, height=2, temperature=0.1, c=0.5,
-                 init_size=1.0, min_size=1e-2, max_size=0.999):
+                 init_size=1e-3, min_size=1e-2, max_size=0.999):
         super(HyperSE, self).__init__()
+        # init_size = height / (height + 1)
         self.k = torch.tensor([-1.0])
         self.num_nodes = num_nodes
         self.height = height
@@ -24,9 +26,9 @@ class HyperSE(nn.Module):
         self.embeddings.weight.data = project(
             self.scale * (2 * torch.rand(num_nodes, d_hyp) - 1), 
             k=self.k, eps=MIN_NORM)
-        self.c = 1 / height
+        self.c = 1 / (height + 1)
         self.init_size = init_size
-        self.min_size = min_size
+        self.min_size = self.c * height
         self.max_size = max_size
     
     def forward(self):
@@ -61,9 +63,11 @@ class HyperSE(nn.Module):
 
         vol_G = weight.sum()
         dist_pairs = hyp_lca(embedding[None], embedding[:, None, :], return_coord=False)
+        dist_pairs += torch.eye(self.num_nodes).to(device)
         ind_pairs = [torch.ones(self.num_nodes, self.num_nodes).to(device)]
         for k in range(1, self.height):
-            ind_pairs_k = torch.sigmoid((dist_pairs - k * self.c) / self.tau)
+            h = 2 * np.arctanh(k * self.c)
+            ind_pairs_k = torch.sigmoid((dist_pairs - h) / self.tau / (self.height-k))
             ind_pairs.append(ind_pairs_k)
         ind_pairs.append(torch.eye(self.num_nodes).to(device))
         for k in range(1, self.height + 1):
@@ -76,3 +80,8 @@ class HyperSE(nn.Module):
             loss += torch.sum(d_log_sum_k - d_log_sum_k_1)
         loss = -1 / vol_G * loss
         return loss
+
+    def decode(self):
+        L_nodes = [i for i in range(self.num_nodes)]
+        embeddings = self.embeddings(torch.arange(self.num_nodes)).detach().cpu().numpy()
+        return construct_tree(L_nodes, embeddings, self.height, self.c, k=1)

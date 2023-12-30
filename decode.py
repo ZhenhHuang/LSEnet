@@ -1,5 +1,8 @@
 import torch
 from lca import hyp_lca
+import networkx as nx
+import numpy as np
+from copy import deepcopy
 
 
 class Node:
@@ -12,7 +15,7 @@ class Node:
 def dfs(v: int, L_node: list, comp, used, adj):
     used[v] = 1
     comp.append(L_node[v])
-    for u in adj[v]:
+    for u in torch.where(adj[v] == 1)[0]:
         if used[u] == 0:
             dfs(u, L_node, comp, used, adj)
 
@@ -29,18 +32,38 @@ def DFS_Comps(L_nodes: list, I) -> list[list]:
     return results
 
 
-def I_ij_k(embedding, k, c=0.5, epsilon=0.5, tau=0.1) -> torch.Tensor:
+def I_ij_k(L_nodes, embedding, height, k, c=0.5, epsilon=0.99, tau=0.1) -> torch.Tensor:
     dist_pairs = hyp_lca(embedding[None], embedding[:, None, :], return_coord=False)
-    ind_pairs = torch.sigmoid((dist_pairs - k * c) / tau)
-    return (ind_pairs > epsilon).long()
+    dist_pairs += torch.eye(len(L_nodes)).to(dist_pairs.device)
+    h = 2 * np.arctanh(k * c)
+    ind_pairs = torch.sigmoid((dist_pairs - h) / tau / (height - k))
+    connect = (ind_pairs > epsilon).long()
+    i, j = torch.where(connect == 1)
+    edges = []
+    for (ii, jj) in zip(i, j):
+        edges.append((L_nodes[ii], L_nodes[jj]))
+    return edges
 
 
 def construct_tree(L_nodes: list, embeddings: torch.Tensor, K, c, k=1):
     root = Node(L_nodes, embeddings[torch.tensor(L_nodes).long()])
-    if k >= K or len(L_nodes) <= 1:
+    if k == K:
+        for i in L_nodes:
+            root.children.append(Node([i], embeddings[i]))
         return root
-    I = I_ij_k(root.embeddings, k=k, c=c)
-    children = DFS_Comps(L_nodes, I)
+    if k > K or len(L_nodes) <= 1:
+        return root
+    edges = I_ij_k(L_nodes, root.embeddings, K, k=k, c=c)
+    G = nx.Graph()
+    G.add_nodes_from(L_nodes)
+    G.add_edges_from(edges)
+    # children = DFS_Comps(L_nodes, I)
+    children = nx.connected_components(G)
+    children = [list(child) for child in children]
+    if len(children) <= 1:
+        for i in L_nodes:
+            root.children.append(Node([i], embeddings[i]))
+        return root
     for child in children:
         root.children.append(construct_tree(child, embeddings, K, c, k + 1))
     return root
