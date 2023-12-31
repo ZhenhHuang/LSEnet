@@ -8,6 +8,7 @@ from eval_utils import cluster_metrics
 from plot_utils import plot_leaves
 from decode import construct_tree
 from dataset import load_data
+from train_utils import EarlyStopping
 from logger import create_logger
 
 
@@ -29,6 +30,7 @@ class Exp:
             model = HyperSE(num_nodes=data['num_nodes'], height=self.configs.height).to(device)
             optimizer = RiemannianAdam(model.parameters(), lr=self.configs.lr, weight_decay=self.configs.w_decay)
 
+            early_stopping = EarlyStopping(self.configs.patience)
             logger.info("--------------------------Training Start-------------------------")
             best_cluster = {'acc': 0, 'nmi': 0, 'f1': 0, 'ari': 0}
             best_cluster_result = {}
@@ -42,13 +44,16 @@ class Exp:
                 optimizer.step()
 
                 logger.info(f"Epoch {epoch}: train_loss={loss.item()}")
+                early_stopping(loss, model, self.configs.save_path)
+                if early_stopping.early_stop:
+                    logger.info("Early stopping")
+                    break
 
             embeddings = model().detach().cpu()
             plot_leaves(embeddings.numpy(), data['labels'])
             tree = construct_tree([i for i in range(data['num_nodes'])],
                                   embeddings, K=self.configs.height,
                                   c=0.999/(self.configs.height + 1), k=1)
-            plot_leaves(embeddings.numpy(), data['labels'])
             loss = model.loss(data['edge_index'], data['degrees'], data['weight'], device)
             
             #     if epoch % self.configs.eval_freq == 0:
