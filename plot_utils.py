@@ -2,11 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def plot_leaves(embeddings, labels):
+def plot_leaves(embeddings, labels, height):
     fig = plt.figure(figsize=(10, 10))
     ax = fig.add_subplot(111)
     circle = plt.Circle((0, 0), 1.0, color='r', alpha=0.1)
     ax.add_artist(circle)
+    for k in range(1, height + 1):
+        circle_k = plt.Circle((0, 0), k / (height + 1), color='b', alpha=0.05)
+        ax.add_artist(circle_k)
     n = embeddings.shape[0]
     colors = get_colors(labels, color_seed=1234)
     ax.scatter(embeddings[:n, 0], embeddings[:n, 1], c=colors, s=50, alpha=0.6)
