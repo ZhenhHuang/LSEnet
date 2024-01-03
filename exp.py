@@ -58,22 +58,22 @@ class Exp:
             
             #     if epoch % self.configs.eval_freq == 0:
             #         logger.info("---------------Evaluation Start-----------------")
-            #         model.eval()
-            #         predicts = []
-            #         trues = []
-            #         trues = torch.concat(trues, dim=-1)
-            #         predicts = np.concatenate(predicts, axis=-1)
+            model.eval()
+            from sklearn.cluster import KMeans
+            kmeans = KMeans(n_clusters=len(np.unique(data['labels'])))
+            predicts = kmeans.fit_predict(embeddings)
+            trues = data['labels']
 
-            #         acc, nmi, f1, ari = [], [], [], []
-            #         for step in range(n_cluster_trials):
-            #             metrics = cluster_metrics(trues.cpu().numpy(), predicts)
-            #             acc_, nmi_, f1_, ari_ = metrics.evaluateFromLabel()
-            #             acc.append(acc_)
-            #             nmi.append(nmi_)
-            #             f1.append(f1_)
-            #             ari.append(ari_)
-            #         acc, nmi, f1, ari = np.mean(acc), np.mean(
-            #             nmi), np.mean(f1), np.mean(ari)
+            acc, nmi, f1, ari = [], [], [], []
+            for step in range(n_cluster_trials):
+                metrics = cluster_metrics(trues, predicts)
+                acc_, nmi_, f1_, ari_ = metrics.evaluateFromLabel()
+                acc.append(acc_)
+                nmi.append(nmi_)
+                f1.append(f1_)
+                ari.append(ari_)
+            acc, nmi, f1, ari = np.mean(acc), np.mean(
+                nmi), np.mean(f1), np.mean(ari)
             #         if acc > best_cluster['acc']:
             #             best_cluster['acc'] = acc
             #             best_cluster_result['acc'] = [acc, nmi, f1, ari]
@@ -87,10 +87,10 @@ class Exp:
             #         if ari > best_cluster['ari']:
             #             best_cluster['ari'] = ari
             #             best_cluster_result['ari'] = [acc, nmi, f1, ari]
-            #         logger.info(
-            #             f"Epoch {epoch}: ACC: {acc}, NMI: {nmi}, F1: {f1}, ARI: {ari}")
-            #         logger.info(
-            #             "-------------------------------------------------------------------------")
+            logger.info(
+                f"Epoch {epoch}: ACC: {acc}, NMI: {nmi}, F1: {f1}, ARI: {ari}")
+            logger.info(
+                "-------------------------------------------------------------------------")
             # for k, result in best_cluster_result.items():
             #     acc, nmi, f1, ari = result
             #     logger.info(

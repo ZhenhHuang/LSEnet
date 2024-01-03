@@ -3,6 +3,7 @@
 """
 
 import torch
+import numpy as np
 from geoopt.manifolds.stereographic.math import dist0
 
 
@@ -57,3 +58,43 @@ def hyp_lca(a, b, return_coord=True, proj_hyp=True):
             return proj.norm(p=2, dim=-1)
     else:
         return proj
+
+
+def hyp_lca2(a, b, return_coord=True, proj_hyp=True):
+    a_inv = reflection_center(a)
+    b_inv = reflection_center(b)
+    c = (a + a_inv) / 2
+    d = (b + b_inv) / 2
+    i_a = a * torch.tensor([-1, 1]).to(a.device)
+    i_b = b * torch.tensor([-1, 1]).to(b.device)
+    A = torch.stack([i_a.repeat(b.shape[0], 1, 1),
+                     i_b.repeat(1, a.shape[1], 1)], dim=-1).transpose(-1, -2)  # (N, N, 2, 2)
+    y = torch.stack([torch.sum(i_a * c, dim=-1).repeat(b.shape[0], 1),
+                     torch.sum(i_b * d, dim=-1).repeat(1, a.shape[1])], dim=-1).unsqueeze(-1)   # (N, N, 2)
+    x = (torch.pinverse(A) @ y).squeeze(-1)
+    x_norm = x.norm(p=2, dim=-1, keepdim=True)
+    r2 = torch.sum(x ** 2, dim=-1, keepdim=True) - 1
+    proj = x / x_norm * (x_norm - r2.abs().sqrt())
+    if not return_coord:
+        if proj_hyp:
+            return dist0(proj, k=torch.tensor([-1.0]).to(proj.device))
+        else:
+            return proj.norm(p=2, dim=-1)
+    else:
+        return proj
+
+
+# def equiv_weights(dist, radius, k, tau):
+#     radius_k = k * radius
+#     dist_inversion = radius_k ** 2 / dist
+#     ratio = (radius_k - dist_inversion) / radius_k
+#     weights = torch.sigmoid((ratio - 0.5 / k) / tau)
+#     return weights
+
+
+def equiv_weights(dist, radius, k, tau, proj_hyp=False):
+    radius_k = k * radius
+    if proj_hyp:
+        radius_k = 2 * np.arctanh(radius_k)
+    weights = torch.sigmoid((dist - radius_k) / tau)
+    return weights

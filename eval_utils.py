@@ -13,25 +13,35 @@ class cluster_metrics:
         l2 = list(set(self.predicts))
         num1 = len(l1)
         num2 = len(l2)
+        ind = 0
         if num1 != num2:
-            raise Exception("number of classes not equal")
-
+            for i in l1:
+                if i in l2:
+                    pass
+                else:
+                    self.predicts[ind] = i
+                    ind += 1
+        l2 = list(set(self.predicts))
+        num2 = len(l2)
+        if num1 != num2:
+            raise "class number not equal!"
         """compute the cost of allocating c1 in L1 to c2 in L2"""
         cost = np.zeros((num1, num2), dtype=int)
         for i, c1 in enumerate(l1):
-            maps = np.where(self.trues == c1)[0]
+            maps = [i1 for i1, e1 in enumerate(self.predicts) if e1 == c1]
             for j, c2 in enumerate(l2):
                 maps_d = [i1 for i1 in maps if self.predicts[i1] == c2]
                 cost[i, j] = len(maps_d)
 
         mks = Munkres()
-        index = mks.compute(-cost)
+        cost = cost.__neg__().tolist()
+        index = mks.compute(cost)
         new_predicts = np.zeros(len(self.predicts))
         for i, c in enumerate(l1):
             c2 = l2[index[i][1]]
-            allocate_index = np.where(self.predicts == c2)[0]
+            allocate_index = [ind for ind, elm in enumerate(self.predicts) if elm == c2]
             new_predicts[allocate_index] = c
-
+        self.new_predicts = new_predicts
         acc = metrics.accuracy_score(self.trues, new_predicts)
         f1_macro = metrics.f1_score(self.trues, new_predicts, average='macro')
         precision_macro = metrics.precision_score(

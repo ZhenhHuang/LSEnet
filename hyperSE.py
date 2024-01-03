@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from geoopt.manifolds import PoincareBall
 from geoopt.manifolds.stereographic.math import project, dist0
 import numpy as np
-from lca import hyp_lca
+from lca import hyp_lca, equiv_weights
 from torch_scatter import scatter_sum
 from decode import construct_tree
 
@@ -62,13 +62,10 @@ class HyperSE(nn.Module):
         embedding = self.normalize(embedding)
 
         vol_G = weight.sum()
-        dist_pairs = hyp_lca(embedding[None], embedding[:, None, :], return_coord=False, proj_hyp=False)    # Euclidean circle
+        dist_pairs = hyp_lca(embedding[None], embedding[:, None, :] + MIN_NORM, return_coord=False, proj_hyp=False)    # Euclidean circle
         ind_pairs = [torch.ones(self.num_nodes, self.num_nodes).to(device)]
         for k in range(1, self.height):
-            radius_k = k * self.c
-            dist_pairs_inversion = radius_k ** 2 / dist_pairs
-            ratio = (radius_k - dist_pairs_inversion) / radius_k
-            ind_pairs_k = torch.sigmoid((ratio - 0.5 / k) / self.tau)
+            ind_pairs_k = equiv_weights(dist_pairs, self.c, k, self.tau, proj_hyp=False)
             ind_pairs.append(ind_pairs_k)
         ind_pairs.append(torch.eye(self.num_nodes).to(device))
         for k in range(1, self.height + 1):
