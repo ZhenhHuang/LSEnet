@@ -54,7 +54,6 @@ class Exp:
             tree = construct_tree([i for i in range(data['num_nodes'])],
                                   embeddings, K=self.configs.height,
                                   c=0.999/(self.configs.height + 1), k=1)
-            loss = model.loss(data, device)
             
             #     if epoch % self.configs.eval_freq == 0:
             #         logger.info("---------------Evaluation Start-----------------")

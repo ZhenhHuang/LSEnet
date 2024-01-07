@@ -32,7 +32,7 @@ parser.add_argument('--kappa', type=float, default=-1.0, help='curvature of simp
 parser.add_argument('--temperature', type=float, default=0.1)
 parser.add_argument('--n_cluster_trials', type=int, default=5)
 
-parser.add_argument('--patience', type=int, default=10, help='early stopping patience')
+parser.add_argument('--patience', type=int, default=15, help='early stopping patience')
 parser.add_argument('--save_path', type=str, default='model.pt')
 # GPU
 parser.add_argument('--use_gpu', action='store_false', help='use gpu')

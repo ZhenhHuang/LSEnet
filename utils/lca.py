@@ -3,6 +3,7 @@
 """
 
 import torch
+import torch.nn.functional as F
 import numpy as np
 from geoopt.manifolds.stereographic.math import dist0
 
