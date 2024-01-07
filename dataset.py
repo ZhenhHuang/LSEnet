@@ -15,6 +15,8 @@ def load_data(configs):
     # dataset = Football()
     dataset = Cora()
     data = {}
+    data['feature'] = dataset.feature
+    data['num_features'] = dataset.num_features
     data['edge_index'] = dataset.edge_index
     data['degrees'] = dataset.degrees
     data['weight'] = dataset.weight
@@ -27,6 +29,8 @@ class KarateClub:
     def __init__(self):
         graph = nx.karate_club_graph()
         data = from_networkx(graph)
+        self.feature = torch.arange(data.num_nodes)
+        self.num_features = 0
         self.num_nodes = data.num_nodes
         self.edge_index = data.edge_index
         self.weight = data.weight
@@ -50,6 +54,8 @@ class Football:
         graph = nx.parse_gml(gml)  # parse gml data
 
         data = from_networkx(graph)
+        self.feature = torch.arange(data.num_nodes)
+        self.num_features = 0
         self.num_nodes = data.num_nodes
         self.edge_index = data.edge_index
         self.weight = torch.ones(self.edge_index.shape[1])
@@ -62,6 +68,8 @@ class Cora:
         dataset = Planetoid('D:\datasets\Graphs', 'cora')
         data = dataset.data
         self.num_nodes = data.x.shape[0]
+        self.feature = data.x
+        self.num_features = data.x.shape[1]
         self.edge_index = data.edge_index
         self.weight = torch.ones(self.edge_index.shape[1])
         self.degrees = scatter_sum(self.weight, self.edge_index[0])

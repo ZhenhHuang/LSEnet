@@ -1,5 +1,5 @@
 import torch
-from lca import hyp_lca, equiv_weights
+from utils.lca import hyp_lca, equiv_weights
 import networkx as nx
 import numpy as np
 from copy import deepcopy
@@ -32,7 +32,7 @@ def DFS_Comps(L_nodes: list, I) -> list[list]:
     return results
 
 
-def I_ij_k(L_nodes, embedding, height, k, c=0.5, epsilon=0.9999, tau=0.05) -> torch.Tensor:
+def I_ij_k(L_nodes, embedding, height, k, c=0.5, epsilon=0.9999, tau=0.1) -> torch.Tensor:
     if k == height:
         connect = torch.eye(len(L_nodes))
     else:

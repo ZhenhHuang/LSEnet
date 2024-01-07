@@ -2,13 +2,13 @@ import torch
 import numpy as np
 import torch.nn.functional as F
 import torch.nn as nn
-from hyperSE import HyperSE
+from models.hyperSE import HyperSE
 from geoopt.optim import RiemannianAdam
-from eval_utils import cluster_metrics
-from plot_utils import plot_leaves
-from decode import construct_tree
+from utils.eval_utils import cluster_metrics
+from utils.plot_utils import plot_leaves
+from utils.decode import construct_tree
 from dataset import load_data
-from train_utils import EarlyStopping
+from utils.train_utils import EarlyStopping
 from logger import create_logger
 
 
@@ -27,7 +27,7 @@ class Exp:
 
         for exp_iter in range(self.configs.exp_iters):
             logger.info(f"\ntrain iters {exp_iter}")
-            model = HyperSE(num_nodes=data['num_nodes'], height=self.configs.height).to(device)
+            model = HyperSE(in_features=data['num_features'], num_nodes=data['num_nodes'], height=self.configs.height).to(device)
             optimizer = RiemannianAdam(model.parameters(), lr=self.configs.lr, weight_decay=self.configs.w_decay)
 
             early_stopping = EarlyStopping(self.configs.patience)
@@ -38,7 +38,7 @@ class Exp:
 
             for epoch in range(1, self.configs.epochs + 1):
                 model.train()
-                loss = model.loss(data['edge_index'], data['degrees'], data['weight'], device)
+                loss = model.loss(data, device)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -49,12 +49,12 @@ class Exp:
                     logger.info("Early stopping")
                     break
 
-            embeddings = model().detach().cpu()
+            embeddings = model(data, device).detach().cpu()
             plot_leaves(embeddings.numpy(), data['labels'], height=self.configs.height)
             tree = construct_tree([i for i in range(data['num_nodes'])],
                                   embeddings, K=self.configs.height,
                                   c=0.999/(self.configs.height + 1), k=1)
-            loss = model.loss(data['edge_index'], data['degrees'], data['weight'], device)
+            loss = model.loss(data, device)
             
             #     if epoch % self.configs.eval_freq == 0:
             #         logger.info("---------------Evaluation Start-----------------")

@@ -14,12 +14,12 @@ def isometric_transform(a, x):
     """Reflection (circle inversion of x through orthogonal circle centered at a)."""
     r2 = torch.sum(a ** 2, dim=-1, keepdim=True) - 1.
     u = x - a
-    return r2 / torch.sum(u ** 2, dim=-1, keepdim=True) * u + a
+    return r2 / torch.sum(u ** 2, dim=-1, keepdim=True).clamp_min(MIN_NORM) * u + a
 
 
 def reflection_center(mu):
     """Center of inversion circle."""
-    return mu / torch.sum(mu ** 2, dim=-1, keepdim=True)
+    return mu / torch.sum(mu ** 2, dim=-1, keepdim=True).clamp_min(MIN_NORM)
 
 
 def euc_reflection(x, a):
@@ -36,7 +36,7 @@ def euc_reflection(x, a):
 
 def _halve(x):
     """ computes the point on the geodesic segment from o to x at half the distance """
-    return x / (1. + torch.sqrt(1 - torch.sum(x ** 2, dim=-1, keepdim=True)))
+    return x / (1. + torch.sqrt((1 - torch.sum(x ** 2, dim=-1, keepdim=True)).clamp_min(MIN_NORM))).clamp_min(MIN_NORM)
 
 
 def hyp_lca(a, b, return_coord=True, proj_hyp=True):
