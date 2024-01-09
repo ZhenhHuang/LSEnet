@@ -25,14 +25,14 @@ parser.add_argument('--version', type=str, default="run")
 parser.add_argument('--log_path', type=str, default="./results/v2302152230/cls_Cora.log")
 
 parser.add_argument('--epochs', type=int, default=1000)
-parser.add_argument('--height', type=int, default=4)
+parser.add_argument('--height', type=int, default=3)
 parser.add_argument('--lr', type=float, default=0.001)
 parser.add_argument('--w_decay', type=float, default=5e-4)
 parser.add_argument('--kappa', type=float, default=-1.0, help='curvature of simple manifolds')
 parser.add_argument('--temperature', type=float, default=0.1)
 parser.add_argument('--n_cluster_trials', type=int, default=5)
 
-parser.add_argument('--patience', type=int, default=15, help='early stopping patience')
+parser.add_argument('--patience', type=int, default=5, help='early stopping patience')
 parser.add_argument('--save_path', type=str, default='model.pt')
 # GPU
 parser.add_argument('--use_gpu', action='store_false', help='use gpu')

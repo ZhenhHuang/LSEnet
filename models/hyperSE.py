@@ -10,24 +10,24 @@ from utils.decode import construct_tree
 from models.layers import LorentzGraphConvolution, LorentzLinear
 from manifold.lorentz import Lorentz
 from models.encoders import GraphEncoder
-from torch_geometric.utils import dropout_edge, mask_feature
 
 
 MIN_NORM = 1e-15
 
 
 class HyperSE(nn.Module):
-    def __init__(self, in_features, num_nodes, d_hyp=2, height=2, temperature=0.1, c=0.5,
-                 embed_dim=64, min_size=1e-2, max_size=0.999, dropout=0.5):
+    def __init__(self, in_features, num_nodes, d_hyp=16, height=2, temperature=0.1, c=0.5,
+                 embed_dim=64, min_size=1e-2, max_size=0.999, dropout=0.5, use_att=False):
         super(HyperSE, self).__init__()
-        init_size = 1.0
+        init_size = 1e-2
         self.k = torch.tensor([-1.0])
         self.num_nodes = num_nodes
         self.height = height
         self.tau = temperature
         self.manifold = Lorentz()
         self.w_q = LorentzLinear(self.manifold, embed_dim + 1, d_hyp + 1, bias=False, dropout=0.1)
-        self.encoder = GraphEncoder(self.manifold, 2, in_features, 512, embed_dim, dropout, 'relu')
+        self.encoder = GraphEncoder(self.manifold, 2, in_features + 1, 512, embed_dim,
+                                    dropout, 'relu', use_att=use_att)
         self.proj = nn.Sequential(LorentzLinear(self.manifold, embed_dim + 1, embed_dim + 1, bias=False, dropout=0.1))
         self.scale = nn.Parameter(torch.tensor([init_size]), requires_grad=True)
         self.c = max_size / (height + 1)
@@ -37,9 +37,11 @@ class HyperSE(nn.Module):
     
     def forward(self, data, device=torch.device('cuda:0')):
         features = data['feature'].to(device)
+        o = torch.zeros_like(features).to(device)
+        features = torch.cat([o[:, 0:1], features], dim=1)
+        features = self.manifold.expmap0(features)
         edge_index = data['edge_index'].to(device)
         embedding_l = self.w_q(self.encoder(features, edge_index))
-        # embedding_l = self.manifold.projx(embedding_l)
         embedding = self.manifold.to_poincare(embedding_l)
         embedding = self.normalize(embedding)
         embedding = project(embedding, k=self.k.to(embedding.device), eps=MIN_NORM)
@@ -64,16 +66,13 @@ class HyperSE(nn.Module):
         features = data['feature'].to(device)
         loss = 0
 
+        o = torch.zeros_like(features).to(device)
+        features = torch.cat([o[:, 0:1], features], dim=1)
+        features = self.manifold.expmap0(features)
         embedding_l = self.encoder(features, edge_index)
-        z_pos = self.proj(embedding_l)
-
-        neg_edge, mask = dropout_edge(edge_index, p=0.5)
-        neg_feat, _ = mask_feature(features, p=0.5)
-        embedding_l_neg = self.encoder(neg_feat, neg_edge)
-        z_neg = self.proj(embedding_l_neg)
-        cl_loss = self.calc_contrastive_loss(z_pos, z_neg)
 
         se_loss = self.calc_se_loss(embedding_l, edge_index, weight, degrees)
+        cl_loss = self.calc_contrastive_loss(embedding_l)
         loss += se_loss + cl_loss
         print(se_loss.item(), cl_loss.item())
         return loss
@@ -92,6 +91,7 @@ class HyperSE(nn.Module):
             ind_pairs_k = equiv_weights(dist_pairs, self.c, k, self.tau, proj_hyp=False)
             ind_pairs.append(ind_pairs_k)
         ind_pairs.append(torch.eye(self.num_nodes).to(device))
+        self.ind_pairs = ind_pairs
         for k in range(1, self.height + 1):
             log_sum_dl_k = torch.log2(torch.sum(ind_pairs[k] * degrees, -1))  # (N, )
             log_sum_dl_k_1 = torch.log2(torch.sum(ind_pairs[k - 1] * degrees, -1))  # (N, )
@@ -103,18 +103,15 @@ class HyperSE(nn.Module):
         loss = -1 / vol_G * loss
         return loss
 
-    def calc_contrastive_loss(self, pos, neg, temperature=0.1):
-        norm1 = pos.norm(dim=-1).clamp_min(1e-8)
-        norm2 = neg.norm(dim=-1).clamp_min(1e-8)
-        sim_matrix = torch.einsum('ik,jk->ij', pos, neg) / (torch.einsum('i,j->ij', norm1, norm2) + MIN_NORM)
-        sim_matrix = torch.exp(sim_matrix / temperature)
-        pos_sim = sim_matrix.diag()
-        loss_1 = pos_sim / (sim_matrix.sum(dim=-2) + MIN_NORM)
-        loss_2 = pos_sim / (sim_matrix.sum(dim=-1) + MIN_NORM)
-
-        loss_1 = -torch.log(loss_1.clamp_min(1e-8)).mean()
-        loss_2 = -torch.log(loss_2.clamp_min(1e-8)).mean()
-        loss = (loss_1 + loss_2) / 2.
+    def calc_contrastive_loss(self, z, temperature=0.1):
+        norm = z.norm(dim=-1).clamp_min(1e-8)
+        sim = torch.einsum('ik,jk->ij', z, z) / (torch.einsum('i,j->ij', norm, norm) + MIN_NORM)
+        sim = torch.exp(sim / temperature)
+        div = sim.sum(dim=-1).clamp_min(1e-8)
+        loss = 0
+        for k in range(1, self.height + 1):
+            info = torch.sum(sim * self.ind_pairs[k], dim=-1) / div
+            loss += -torch.log(info).mean()
         return loss
 
     def decode(self):

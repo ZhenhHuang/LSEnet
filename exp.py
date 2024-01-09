@@ -50,10 +50,10 @@ class Exp:
                     break
 
             embeddings = model(data, device).detach().cpu()
-            plot_leaves(embeddings.numpy(), data['labels'], height=self.configs.height)
-            tree = construct_tree([i for i in range(data['num_nodes'])],
-                                  embeddings, K=self.configs.height,
-                                  c=0.999/(self.configs.height + 1), k=1)
+            # plot_leaves(embeddings.numpy(), data['labels'], height=self.configs.height)
+            # tree = construct_tree([i for i in range(data['num_nodes'])],
+            #                       embeddings, K=self.configs.height,
+            #                       c=0.999/(self.configs.height + 1), k=1)
             
             #     if epoch % self.configs.eval_freq == 0:
             #         logger.info("---------------Evaluation Start-----------------")
