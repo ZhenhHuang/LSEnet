@@ -17,7 +17,7 @@ MIN_NORM = 1e-15
 
 class HyperSE(nn.Module):
     def __init__(self, in_features, num_nodes, d_hyp=16, height=2, temperature=0.1, c=0.5,
-                 embed_dim=64, min_size=1e-2, max_size=0.999, dropout=0.5, use_att=False):
+                 embed_dim=32, min_size=1e-2, max_size=0.999, dropout=0.5, use_att=False):
         super(HyperSE, self).__init__()
         init_size = 1e-2
         self.k = torch.tensor([-1.0])
@@ -25,10 +25,9 @@ class HyperSE(nn.Module):
         self.height = height
         self.tau = temperature
         self.manifold = Lorentz()
-        self.w_q = LorentzLinear(self.manifold, embed_dim + 1, d_hyp + 1, bias=False, dropout=0.1)
+        # self.w_q = LorentzLinear(self.manifold, embed_dim + 1, d_hyp + 1, bias=False, dropout=0.1)
         self.encoder = GraphEncoder(self.manifold, 2, in_features + 1, 512, embed_dim,
                                     dropout, 'relu', use_att=use_att)
-        self.proj = nn.Sequential(LorentzLinear(self.manifold, embed_dim + 1, embed_dim + 1, bias=False, dropout=0.1))
         self.scale = nn.Parameter(torch.tensor([init_size]), requires_grad=True)
         self.c = max_size / (height + 1)
         self.init_size = init_size
@@ -70,8 +69,10 @@ class HyperSE(nn.Module):
         features = torch.cat([o[:, 0:1], features], dim=1)
         features = self.manifold.expmap0(features)
         embedding_l = self.encoder(features, edge_index)
+        embedding = self.manifold.to_poincare(embedding_l)
+        embedding = self.normalize(embedding)
 
-        se_loss = self.calc_se_loss(embedding_l, edge_index, weight, degrees)
+        se_loss = self.calc_se_loss(embedding, edge_index, weight, degrees)
         cl_loss = self.calc_contrastive_loss(embedding_l)
         loss += se_loss + cl_loss
         print(se_loss.item(), cl_loss.item())
@@ -81,8 +82,6 @@ class HyperSE(nn.Module):
         device = embedding.device
         loss = 0
         vol_G = weight.sum()
-        embedding = self.manifold.to_poincare(self.w_q(embedding))
-        embedding = self.normalize(embedding)
 
         dist_pairs = hyp_lca(embedding[None], embedding[:, None, :] + MIN_NORM, return_coord=False,
                              proj_hyp=False)  # Euclidean circle
