@@ -17,7 +17,7 @@ class GraphEncoder(nn.Module):
             self.layers.append(LorentzGraphConvolution(self.manifold, n_hidden,
                                                        n_hidden, False, dropout=dropout, use_att=use_att, nonlin=act))
         self.layers.append(LorentzGraphConvolution(self.manifold, n_hidden,
-                                                       out_dim + 1, False, dropout=dropout, use_att=use_att, nonlin=act))
+                                                       out_dim, False, dropout=dropout, use_att=use_att, nonlin=act))
 
     def forward(self, x, edge_index):
         for layer in self.layers:

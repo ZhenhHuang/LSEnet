@@ -17,7 +17,7 @@ MIN_NORM = 1e-15
 
 class HyperSE(nn.Module):
     def __init__(self, in_features, num_nodes, d_hyp=16, height=2, temperature=0.1, c=0.5,
-                 embed_dim=32, min_size=1e-2, max_size=0.999, dropout=0.5, use_att=False):
+                 embed_dim=64, min_size=1e-2, max_size=0.999, dropout=0.5, use_att=False):
         super(HyperSE, self).__init__()
         init_size = 1e-2
         self.k = torch.tensor([-1.0])
@@ -25,9 +25,9 @@ class HyperSE(nn.Module):
         self.height = height
         self.tau = temperature
         self.manifold = Lorentz()
-        # self.w_q = LorentzLinear(self.manifold, embed_dim + 1, d_hyp + 1, bias=False, dropout=0.1)
-        self.encoder = GraphEncoder(self.manifold, 2, in_features + 1, 512, embed_dim,
+        self.encoder = GraphEncoder(self.manifold, 2, in_features + 1, 512, embed_dim + 1,
                                     dropout, 'relu', use_att=use_att)
+        self.proj = LorentzLinear(self.manifold, embed_dim + 1, d_hyp + 1, bias=False, dropout=0.1)
         self.scale = nn.Parameter(torch.tensor([init_size]), requires_grad=True)
         self.c = max_size / (height + 1)
         self.init_size = init_size
@@ -40,7 +40,7 @@ class HyperSE(nn.Module):
         features = torch.cat([o[:, 0:1], features], dim=1)
         features = self.manifold.expmap0(features)
         edge_index = data['edge_index'].to(device)
-        embedding_l = self.w_q(self.encoder(features, edge_index))
+        embedding_l = self.proj(self.encoder(features, edge_index))
         embedding = self.manifold.to_poincare(embedding_l)
         embedding = self.normalize(embedding)
         embedding = project(embedding, k=self.k.to(embedding.device), eps=MIN_NORM)
@@ -63,18 +63,16 @@ class HyperSE(nn.Module):
         edge_index = data['edge_index'].to(device)
         degrees = data['degrees'].to(device)
         features = data['feature'].to(device)
-        loss = 0
 
         o = torch.zeros_like(features).to(device)
         features = torch.cat([o[:, 0:1], features], dim=1)
         features = self.manifold.expmap0(features)
         embedding_l = self.encoder(features, edge_index)
-        embedding = self.manifold.to_poincare(embedding_l)
-        embedding = self.normalize(embedding)
+        embedding = self.manifold.to_poincare(self.proj(embedding_l))
 
         se_loss = self.calc_se_loss(embedding, edge_index, weight, degrees)
         cl_loss = self.calc_contrastive_loss(embedding_l)
-        loss += se_loss + cl_loss
+        loss = se_loss + cl_loss
         print(se_loss.item(), cl_loss.item())
         return loss
 
@@ -83,6 +81,7 @@ class HyperSE(nn.Module):
         loss = 0
         vol_G = weight.sum()
 
+        embedding = self.normalize(embedding)
         dist_pairs = hyp_lca(embedding[None], embedding[:, None, :] + MIN_NORM, return_coord=False,
                              proj_hyp=False)  # Euclidean circle
         ind_pairs = [torch.ones(self.num_nodes, self.num_nodes).to(device)]

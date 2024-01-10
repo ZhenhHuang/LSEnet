@@ -32,12 +32,11 @@ def DFS_Comps(L_nodes: list, I) -> list[list]:
     return results
 
 
-def I_ij_k(L_nodes, embedding, height, k, c=0.5, epsilon=0.9999, tau=0.1) -> torch.Tensor:
+def I_ij_k(L_nodes, embedding, weights, height, k, epsilon=0.99) -> torch.Tensor:
     if k == height:
         connect = torch.eye(len(L_nodes))
     else:
-        dist_pairs = hyp_lca(embedding[None], embedding[:, None, :], return_coord=False, proj_hyp=False)
-        ind_pairs = equiv_weights(dist_pairs, c, k, tau)
+        ind_pairs = weights[torch.tensor(L_nodes)[:, None], torch.tensor(L_nodes)[None]]
         connect = (ind_pairs > epsilon).long()
     i, j = torch.where(connect == 1)
     edges = []
@@ -46,15 +45,15 @@ def I_ij_k(L_nodes, embedding, height, k, c=0.5, epsilon=0.9999, tau=0.1) -> tor
     return edges
 
 
-def construct_tree(L_nodes: list, embeddings: torch.Tensor, K, c, k=1):
+def construct_tree(L_nodes: list, embeddings: torch.Tensor, L_weights: list, height, k=1):
     root = Node(L_nodes, embeddings[torch.tensor(L_nodes).long()])
-    if k == K:
+    if k == height:
         for i in L_nodes:
             root.children.append(Node([i], embeddings[i]))
         return root
-    if k > K or len(L_nodes) <= 1:
+    if k > height or len(L_nodes) <= 1:
         return root
-    edges = I_ij_k(L_nodes, root.embeddings, K, k=k, c=c)
+    edges = I_ij_k(L_nodes, root.embeddings, L_weights[k], height, k=k)
     G = nx.Graph()
     G.add_nodes_from(L_nodes)
     G.add_edges_from(edges)
@@ -66,5 +65,5 @@ def construct_tree(L_nodes: list, embeddings: torch.Tensor, K, c, k=1):
             root.children.append(Node([i], embeddings[i]))
         return root
     for child in children:
-        root.children.append(construct_tree(child, embeddings, K, c, k + 1))
+        root.children.append(construct_tree(child, embeddings, L_weights, height, k + 1))
     return root
