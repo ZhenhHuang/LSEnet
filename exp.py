@@ -29,9 +29,9 @@ class Exp:
             logger.info(f"\ntrain iters {exp_iter}")
             model = HyperSE(in_features=data['num_features'], num_nodes=data['num_nodes'], height=self.configs.height).to(device)
             optimizer = RiemannianAdam(model.parameters(), lr=self.configs.lr, weight_decay=self.configs.w_decay)
-            pretrained = True
-            if pretrained:
-                model.load_state_dict(torch.load(f'checkpoints/{self.configs.save_path}'))
+            # pretrained = True
+            # if pretrained:
+            #     model.load_state_dict(torch.load(f'checkpoints/{self.configs.save_path}'))
             early_stopping = EarlyStopping(self.configs.patience)
             logger.info("--------------------------Training Start-------------------------")
             best_cluster = {'acc': 0, 'nmi': 0, 'f1': 0, 'ari': 0}
@@ -52,7 +52,7 @@ class Exp:
                     break
 
             embeddings = model(data, device).detach().cpu()
-            # plot_leaves(embeddings.numpy(), data['labels'], height=self.configs.height)
+            plot_leaves(embeddings.numpy(), data['labels'], height=self.configs.height)
             tree = construct_tree([i for i in range(data['num_nodes'])],
                                   embeddings, model.ind_pairs, height=self.configs.height, k=1)
             

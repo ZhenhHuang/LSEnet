@@ -85,17 +85,15 @@ def hyp_lca2(a, b, return_coord=True, proj_hyp=True):
         return proj
 
 
-# def equiv_weights(dist, radius, k, tau):
-#     radius_k = k * radius
-#     dist_inversion = radius_k ** 2 / dist
-#     ratio = (radius_k - dist_inversion) / radius_k
-#     weights = torch.sigmoid((ratio - 0.5 / k) / tau)
-#     return weights
-
-
-def equiv_weights(dist, radius, k, tau, proj_hyp=False):
-    radius_k = k * radius
-    if proj_hyp:
-        radius_k = 2 * np.arctanh(radius_k)
-    weights = torch.sigmoid((dist - radius_k) / tau)
+def equiv_weights(dist2, k, N_0=100, beta=5):
+    div = N_0 * np.exp(-beta * k)
+    weights = torch.exp(-dist2 / div)
     return weights
+
+
+# def equiv_weights(dist, radius, k, tau, proj_hyp=False):
+#     radius_k = k * radius
+#     if proj_hyp:
+#         radius_k = 2 * np.arctanh(radius_k)
+#     weights = torch.sigmoid((dist - radius_k) / tau)
+#     return weights

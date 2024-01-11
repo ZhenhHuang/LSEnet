@@ -32,7 +32,7 @@ def DFS_Comps(L_nodes: list, I) -> list[list]:
     return results
 
 
-def I_ij_k(L_nodes, embedding, weights, height, k, epsilon=0.99) -> torch.Tensor:
+def I_ij_k(L_nodes, embedding, weights, height, k, epsilon=0.6) -> torch.Tensor:
     if k == height:
         connect = torch.eye(len(L_nodes))
     else:

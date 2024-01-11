@@ -1,5 +1,6 @@
 import torch
 import networkx as nx
+import torch_geometric.datasets
 from torch_geometric.data import Dataset, Data
 from torch_geometric.datasets import Planetoid
 from torch_geometric.utils import from_networkx
@@ -27,15 +28,14 @@ def load_data(configs):
 
 class KarateClub:
     def __init__(self):
-        graph = nx.karate_club_graph()
-        data = from_networkx(graph)
-        self.feature = torch.arange(data.num_nodes)
-        self.num_features = 0
-        self.num_nodes = data.num_nodes
+        data = torch_geometric.datasets.KarateClub()
+        self.feature = data.x
+        self.num_features = data.x.shape[1]
+        self.num_nodes = data.x.shape[0]
         self.edge_index = data.edge_index
-        self.weight = data.weight
+        self.weight = torch.ones(self.edge_index.shape[1])
         self.degrees = scatter_sum(self.weight, self.edge_index[0])
-        self.labels = data.club
+        self.labels = data.y.tolist()
 
 
 class Football:
@@ -54,8 +54,8 @@ class Football:
         graph = nx.parse_gml(gml)  # parse gml data
 
         data = from_networkx(graph)
-        self.feature = torch.arange(data.num_nodes)
-        self.num_features = 0
+        self.feature = torch.eye(data.num_nodes)
+        self.num_features = data.num_nodes
         self.num_nodes = data.num_nodes
         self.edge_index = data.edge_index
         self.weight = torch.ones(self.edge_index.shape[1])

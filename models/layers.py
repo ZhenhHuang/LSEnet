@@ -104,3 +104,32 @@ class LorentzAgg(nn.Module):
         denorm = denorm.abs().clamp_min(1e-8).sqrt()
         output = support_t / denorm
         return output
+
+
+class LorentzAtt(nn.Module):
+    def __init__(self, manifold, in_features, dropout, return_att=True, nonlin=None):
+        super(LorentzAtt, self).__init__()
+        self.manifold = manifold
+        self.return_att = return_att
+        self.in_features = in_features
+        self.dropout = dropout
+        self.key_linear = LorentzLinear(manifold, in_features, in_features, nonlin=nonlin)
+        self.query_linear = LorentzLinear(manifold, in_features, in_features, nonlin=nonlin)
+        self.bias = nn.Parameter(torch.zeros(()) + 20)
+        self.scale = nn.Parameter(torch.zeros(()) + math.sqrt(in_features))
+
+    def forward(self, x, res_att=None):
+        query = self.query_linear(x)
+        key = self.key_linear(x)
+        att_adj = 2 + 2 * self.manifold.cinner(query, key)  # (N, N)
+        att_adj = att_adj / self.scale + self.bias
+        if res_att is not None:
+            att_adj = (att_adj + torch.logit(res_att.clamp(1e-5, 0.999))) / 2
+        att_adj = torch.sigmoid(att_adj)
+        support_t = torch.matmul(att_adj, x)    # (N, N)
+        denorm = (-self.manifold.inner(None, support_t, keepdim=True))
+        denorm = denorm.abs().clamp_min(1e-8).sqrt()
+        output = support_t / denorm
+        if self.return_att:
+            return output, att_adj
+        return output
