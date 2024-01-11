@@ -53,7 +53,8 @@ class Exp:
 
             embeddings = model(data, device).detach().cpu()
             plot_leaves(embeddings.numpy(), data['labels'], height=self.configs.height)
-            tree = construct_tree([i for i in range(data['num_nodes'])],
+            tree = construct_tree(torch.tensor([i for i in range(data['num_nodes'])]).long(),
+                                  model.manifold,
                                   embeddings, model.ind_pairs, height=self.configs.height, k=1)
             
             #     if epoch % self.configs.eval_freq == 0:

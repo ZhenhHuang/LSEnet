@@ -14,3 +14,12 @@ class Lorentz(geoopt.Lorentz):
     def to_poincare(self, x, dim=-1):
         dn = x.size(dim) - 1
         return x.narrow(dim, 1, dn) / (x.narrow(-dim, 0, 1) + torch.sqrt(self.k))
+
+    def from_poincare(self, x, dim=-1, eps=1e-6):
+        x_norm_square = torch.sum(x * x, dim=dim, keepdim=True)
+        res = (
+                torch.sqrt(self.k)
+                * torch.cat((1 + x_norm_square, 2 * x), dim=dim)
+                / (1.0 - x_norm_square + eps)
+        )
+        return res

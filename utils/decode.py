@@ -1,69 +1,51 @@
 import torch
 from utils.lca import hyp_lca, equiv_weights
+from utils.utils import Frechet_mean
 import networkx as nx
 import numpy as np
 from copy import deepcopy
 
 
 class Node:
-    def __init__(self, index: list, embeddings: torch.Tensor):
-        self.index = index
-        self.embeddings = embeddings
+    def __init__(self, index: list, embeddings: torch.Tensor, coords=None):
+        self.index = index  # T_alpha
+        self.embeddings = embeddings    # coordinates of nodes in T_alpha
         self.children = []
+        self.coords = coords  # node coordinates
 
 
-def dfs(v: int, L_node: list, comp, used, adj):
-    used[v] = 1
-    comp.append(L_node[v])
-    for u in torch.where(adj[v] == 1)[0]:
-        if used[u] == 0:
-            dfs(u, L_node, comp, used, adj)
-
-
-def DFS_Comps(L_nodes: list, I) -> list[list]:
-    used = [0] * len(L_nodes)
-    results = []
-    for i in range(len(L_nodes)):
-        comp = []
-        if used[i] == 0:
-            dfs(i, L_nodes, comp, used, I)
-        if len(comp) >= 1:
-            results.append(comp)
-    return results
-
-
-def I_ij_k(L_nodes, embedding, weights, height, k, epsilon=0.6) -> torch.Tensor:
+def build_equiv_graph(L_nodes, embedding, weights, height, k, epsilon=0.9) -> torch.Tensor:
     if k == height:
-        connect = torch.eye(len(L_nodes))
+        connect = torch.eye(L_nodes.shape[0])
     else:
-        ind_pairs = weights[torch.tensor(L_nodes)[:, None], torch.tensor(L_nodes)[None]]
+        ind_pairs = weights[L_nodes[:, None], L_nodes[None]]
         connect = (ind_pairs > epsilon).long()
     i, j = torch.where(connect == 1)
-    edges = []
-    for (ii, jj) in zip(i, j):
-        edges.append((L_nodes[ii], L_nodes[jj]))
+    edges = torch.stack([L_nodes[i], L_nodes[j]], dim=-1)
+    edges = [tuple(e.tolist()) for e in edges]
     return edges
 
 
-def construct_tree(L_nodes: list, embeddings: torch.Tensor, L_weights: list, height, k=1):
-    root = Node(L_nodes, embeddings[torch.tensor(L_nodes).long()])
+def construct_tree(L_nodes: torch.LongTensor, manifold, embeddings: torch.Tensor, L_weights: list, height, k=1):
+    root = Node(L_nodes, embeddings[L_nodes])
+    root.coords = Frechet_mean(manifold, root.embeddings)
     if k == height:
         for i in L_nodes:
-            root.children.append(Node([i], embeddings[i]))
+            root.children.append(Node([i], embeddings[i], embeddings[i]))
         return root
     if k > height or len(L_nodes) <= 1:
         return root
-    edges = I_ij_k(L_nodes, root.embeddings, L_weights[k], height, k=k)
+    edges = build_equiv_graph(L_nodes, root.embeddings, L_weights[k].detach().cpu(), height, k=k)
     G = nx.Graph()
-    G.add_nodes_from(L_nodes)
+    G.add_nodes_from(L_nodes.tolist())
     G.add_edges_from(edges)
-    # children = DFS_Comps(L_nodes, I)
     children = nx.connected_components(G)
     children = [list(child) for child in children]
     if len(children) <= 1:
         for i in L_nodes:
-            root.children.append(Node([i], embeddings[i]))
+            root.children.append(Node([i], embeddings[i], embeddings[i]))
         return root
     for child in children:
-        root.children.append(construct_tree(child, embeddings, L_weights, height, k + 1))
+        root.children.append(construct_tree(torch.tensor(child).long(),
+                                            manifold, embeddings, L_weights, height, k + 1))
     return root
