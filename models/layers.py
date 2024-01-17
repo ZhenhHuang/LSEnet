@@ -8,6 +8,7 @@ from geoopt.manifolds import PoincareBall
 from torch_scatter import scatter_sum
 from torch_geometric.utils import add_self_loops
 import math
+from utils.utils import gumbel_softmax, adjacency2index, index2adjacency
 
 
 class LorentzGraphConvolution(nn.Module):
@@ -133,3 +134,38 @@ class LorentzAtt(nn.Module):
         if self.return_att:
             return output, att_adj
         return output
+
+
+class LorentzAssignment(nn.Module):
+    def __init__(self, manifold, in_features, num_assign, dropout, bias=False, nonlin=None):
+        super(LorentzAssignment, self).__init__()
+        self.assign_linear = LorentzGraphConvolution(manifold, in_features, num_assign, use_att=False,
+                                                     use_bias=bias, dropout=dropout, nonlin=nonlin)
+
+    def forward(self, x, edge_index):
+        ass = self.assign_linear(x, edge_index)
+        logits = torch.log_softmax(ass, dim=-1)
+        ass = gumbel_softmax(logits, hard=True)
+        return ass
+
+
+class LSENetLayer(nn.Module):
+    def __init__(self, manifold, in_features, out_features, num_assign, dropout, bias=False, nonlin=None):
+        super(LSENetLayer, self).__init__()
+        self.manifold = manifold
+        # self.conv = LorentzGraphConvolution(manifold, in_features, out_features, use_att=False,
+        #                                              use_bias=bias, dropout=dropout, nonlin=nonlin)
+        self.assignor = LorentzAssignment(manifold, out_features, num_assign,
+                                                     bias=bias, dropout=dropout, nonlin=nonlin)
+
+    def forward(self, x, edge_index):
+        # x = self.conv(x, edge_index)
+        ass = self.assignor(x, edge_index)
+        support_t = ass.t() @ x
+        denorm = (-self.manifold.inner(None, support_t, keepdim=True))
+        denorm = denorm.abs().clamp_min(1e-8).sqrt()
+        x_assigned = support_t / denorm
+        adj = index2adjacency(x.shape[0], edge_index)
+        adj = ass.t() @ adj @ ass
+        edge_index_assigned = adjacency2index(adj)
+        return x_assigned, edge_index_assigned, ass

@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 from torch_scatter import scatter_sum
 from utils.decode import construct_tree
-from models.layers import LorentzGraphConvolution, LorentzLinear, LorentzAgg, LorentzAtt
+from models.layers import LSENetLayer, LorentzGraphConvolution
 from manifold.lorentz import Lorentz
 from utils.utils import select_activation
 from models.encoders import GraphEncoder
@@ -20,13 +20,15 @@ class LSENet(nn.Module):
         self.temperature = temperature
         self.num_nodes = num_nodes
         self.height = height
+        self.embed_layer = LorentzGraphConvolution(self.manifold, in_features + 1, embed_dim + 1, use_att=False,
+                                                     use_bias=False, dropout=dropout, nonlin=self.nonlin)
         self.layers = nn.ModuleList([])
-        # self.layers.append(LorentzGraphConvolution(self.manifold, in_features + 1, embed_dim + 1,
-        #                                            use_bias=False, use_att=True, nonlin=None, dropout=dropout))
-        self.layers.append(GraphEncoder(self.manifold, 2, in_features + 1, 256, embed_dim + 1,
-                                        dropout, nonlin, use_att=False))
-        for _ in range(height - 1):
-            self.layers.append(LorentzAtt(self.manifold, embed_dim + 1, dropout=dropout, return_att=True))
+        coeff = int(np.exp(np.log(num_nodes) / height))
+        num_ass = int(num_nodes / coeff)
+        for _ in range(height):
+            self.layers.append(LSENetLayer(self.manifold, embed_dim + 1, embed_dim + 1, num_ass,
+                                       bias=False, dropout=dropout, nonlin=self.nonlin))
+            num_ass = int(num_ass / coeff)
 
     def forward(self, x, edge_index):
 
@@ -34,26 +36,18 @@ class LSENet(nn.Module):
         o = torch.zeros_like(x).to(x.device)
         x = torch.cat([o[:, 0:1], x], dim=1)
         x = self.manifold.expmap0(x)
+        z = self.embed_layer(x, edge_index)
 
-        self.embeddings = []
-        self.weights = [torch.eye(self.num_nodes).to(x.device)]
+        self.tree_node_coords = {self.height: z}
+        self.assignments = {self.height: torch.eye(self.num_nodes).to(x.device)}
 
-        z = self.layers[0](x, edge_index)
-        self.embeddings.append(z)
+        edge = edge_index.clone()
+        for i, layer in enumerate(self.layers):
+            z, edge, ass = layer(z, edge)
+            self.tree_node_coords[self.height - i - 1] = z
+            self.assignments[self.height - i - 1] = ass
 
-        for i, layer in enumerate(self.layers[1:]):
-            z, att = layer(z, self.weights[i])
-            self.embeddings.append(z)
-            self.weights.append(att)
-
-        z = torch.sum(z, dim=0, keepdim=True)
-
-        denorm = (-self.manifold.inner(None, z, keepdim=True))
-        denorm = denorm.abs().clamp_min(1e-8).sqrt()
-        z = z / denorm
-        self.embeddings.append(z)
-        self.weights.append(torch.ones(self.num_nodes, self.num_nodes).to(x.device))
-        return self.embeddings[::-1], self.weights[::-1]
+        return self.tree_node_coords, self.assignments
 
 
 

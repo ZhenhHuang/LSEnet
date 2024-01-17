@@ -3,7 +3,7 @@ import networkx as nx
 import torch_geometric.datasets
 from torch_geometric.data import Dataset, Data
 from torch_geometric.datasets import Planetoid
-from torch_geometric.utils import from_networkx
+from torch_geometric.utils import from_networkx, negative_sampling
 from torch_scatter import scatter_sum
 import urllib.request
 import io
@@ -23,6 +23,7 @@ def load_data(configs):
     data['weight'] = dataset.weight
     data['num_nodes'] = dataset.num_nodes
     data['labels'] = dataset.labels
+    data['neg_edge_index'] = dataset.neg_edge_index
     return data
 
 
@@ -36,6 +37,7 @@ class KarateClub:
         self.weight = torch.ones(self.edge_index.shape[1])
         self.degrees = scatter_sum(self.weight, self.edge_index[0])
         self.labels = data.y.tolist()
+        self.neg_edge_index = negative_sampling(data.edge_index)
 
 
 class Football:
@@ -61,6 +63,7 @@ class Football:
         self.weight = torch.ones(self.edge_index.shape[1])
         self.degrees = scatter_sum(self.weight, self.edge_index[0])
         self.labels = data.value.tolist()
+        self.neg_edge_index = negative_sampling(data.edge_index)
 
 
 class Cora:
@@ -74,3 +77,4 @@ class Cora:
         self.weight = torch.ones(self.edge_index.shape[1])
         self.degrees = scatter_sum(self.weight, self.edge_index[0])
         self.labels = data.y.tolist()
+        self.neg_edge_index = negative_sampling(data.edge_index)

@@ -146,15 +146,20 @@ class HyperSE(nn.Module):
     def forward(self, data, device=torch.device('cuda:0')):
         features = data['feature'].to(device)
         edge_index = data['edge_index'].to(device)
-        embeddings, ind_pairs = self.encoder(features, edge_index)
-        self.disk_embeddings = []
-        for x in embeddings:
+        embeddings, assignments = self.encoder(features, edge_index)
+        self.disk_embeddings = {}
+        for height, x in embeddings.items():
             x = self.manifold.to_poincare(x)
             x = self.normalize(x)
             x = project(x, k=self.k.to(x.device), eps=MIN_NORM)
-            self.disk_embeddings.append(x)
+            self.disk_embeddings[height] = x
+        ind_pairs = {self.height: assignments[self.height]}
+        temp = assignments[self.height]
+        for k in range(self.height - 1, -1, -1):
+            temp = temp @ assignments[k]
+            ind_pairs[k] = temp @ temp.t()
         self.ind_pairs = ind_pairs
-        return self.disk_embeddings[-1]
+        return self.disk_embeddings[self.height]
 
     def normalize(self, embeddings):
         min_size = self.min_size
@@ -174,10 +179,15 @@ class HyperSE(nn.Module):
         degrees = data['degrees'].to(device)
         features = data['feature'].to(device)
 
-        embeddings, ind_pairs = self.encoder(features, edge_index)
+        embeddings, assignments = self.encoder(features, edge_index)
 
         loss = 0
         vol_G = weight.sum()
+        ind_pairs = {self.height: assignments[self.height]}
+        temp = assignments[self.height]
+        for k in range(self.height - 1, -1, -1):
+            temp = temp @ assignments[k]
+            ind_pairs[k] = temp @ temp.t()
 
         for k in range(1, self.height + 1):
             log_sum_dl_k = torch.log2(torch.sum(ind_pairs[k] * degrees, -1))  # (N, )
@@ -189,4 +199,10 @@ class HyperSE(nn.Module):
             loss += torch.sum(d_log_sum_k - d_log_sum_k_1)
         loss = -1 / vol_G * loss + self.manifold.dist0(embeddings[0])
 
+        # neg_edge_index = data['neg_edge_index'].to(device)
+        # edges = torch.concat([edge_index, neg_edge_index], dim=-1)
+        # prob = self.manifold.dist(embeddings[-1][edges[0]], embeddings[-1][edges[1]])
+        # prob = torch.sigmoid((2. - prob) / 1.)
+        # label = torch.concat([torch.ones(edge_index.shape[-1]), torch.zeros(neg_edge_index.shape[-1])]).to(device)
+        # loss += F.binary_cross_entropy(prob, label)
         return loss
