@@ -6,7 +6,7 @@ from models.hyperSE import HyperSE
 from geoopt.optim import RiemannianAdam
 from utils.eval_utils import cluster_metrics
 from utils.plot_utils import plot_leaves
-from utils.decode import construct_tree
+from utils.decode import construct_tree, to_networkx_tree
 from dataset import load_data
 from utils.train_utils import EarlyStopping
 from logger import create_logger
@@ -52,11 +52,12 @@ class Exp:
                     break
 
             embeddings = model(data, device).detach().cpu()
-            plot_leaves(embeddings.numpy(), data['labels'], height=self.configs.height)
             tree = construct_tree(torch.tensor([i for i in range(data['num_nodes'])]).long(),
                                   model.manifold,
-                                  embeddings, model.ind_pairs, height=self.configs.height, k=1)
-            
+                                  embeddings, model.ind_pairs, height=self.configs.height, k=1,
+                                  nodes_count=embeddings.shape[0])
+            tree_graph = to_networkx_tree(tree, embeddings)
+            plot_leaves(tree_graph, embeddings.numpy(), data['labels'], height=self.configs.height)
             #     if epoch % self.configs.eval_freq == 0:
             #         logger.info("---------------Evaluation Start-----------------")
             model.eval()

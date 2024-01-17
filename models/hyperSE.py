@@ -129,7 +129,7 @@ MIN_NORM = 1e-15
 
 class HyperSE(nn.Module):
     def __init__(self, in_features, num_nodes, height=3, temperature=0.1,
-                 embed_dim=64, dropout=0.1, nonlin='relu', max_size=0.999):
+                 embed_dim=2, dropout=0.1, nonlin='relu', max_size=0.999):
         super(HyperSE, self).__init__()
         init_size = 1e-2
         self.k = torch.tensor([-1.0])
@@ -164,7 +164,7 @@ class HyperSE(nn.Module):
     def normalize(self, embeddings):
         min_size = self.min_size
         max_size = self.max_size
-        embeddings_normed = F.normalize(embeddings, p=2, dim=-1)
+        embeddings_normed = F.normalize(embeddings, p=2, dim=-1) * 0.999
         return embeddings_normed
 
     def loss(self, data, device=torch.device('cuda:0')):
@@ -199,10 +199,10 @@ class HyperSE(nn.Module):
             loss += torch.sum(d_log_sum_k - d_log_sum_k_1)
         loss = -1 / vol_G * loss + self.manifold.dist0(embeddings[0])
 
-        # neg_edge_index = data['neg_edge_index'].to(device)
-        # edges = torch.concat([edge_index, neg_edge_index], dim=-1)
-        # prob = self.manifold.dist(embeddings[-1][edges[0]], embeddings[-1][edges[1]])
-        # prob = torch.sigmoid((2. - prob) / 1.)
-        # label = torch.concat([torch.ones(edge_index.shape[-1]), torch.zeros(neg_edge_index.shape[-1])]).to(device)
-        # loss += F.binary_cross_entropy(prob, label)
+        neg_edge_index = data['neg_edge_index'].to(device)
+        edges = torch.concat([edge_index, neg_edge_index], dim=-1)
+        prob = self.manifold.dist(embeddings[self.height][edges[0]], embeddings[self.height][edges[1]])
+        prob = torch.sigmoid((2. - prob) / 1.)
+        label = torch.concat([torch.ones(edge_index.shape[-1]), torch.zeros(neg_edge_index.shape[-1])]).to(device)
+        loss += F.binary_cross_entropy(prob, label)
         return loss

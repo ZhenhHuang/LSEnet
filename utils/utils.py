@@ -11,14 +11,16 @@ def select_activation(activation):
         raise NotImplementedError('the non_linear_function is not implemented')
 
 
-def Frechet_mean(manifold, embeddings, weights=None, keepdim=False):
+def Frechet_mean_poincare(manifold, embeddings, weights=None, keepdim=False):
+    z = manifold.from_poincare(embeddings)
     if weights is None:
-        z = torch.sum(embeddings, dim=0, keepdim=True)
+        z = torch.sum(z, dim=0, keepdim=True)
     else:
-        z = torch.sum(embeddings * weights, dim=0, keepdim=keepdim)
+        z = torch.sum(z * weights, dim=0, keepdim=keepdim)
     denorm = manifold.inner(None, z, keepdim=keepdim)
     denorm = denorm.abs().clamp_min(1e-8).sqrt()
     z = z / denorm
+    z = manifold.to_poincare(z).to(embeddings.device)
     return z
 
 

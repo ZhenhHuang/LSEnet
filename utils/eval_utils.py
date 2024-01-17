@@ -3,6 +3,10 @@ from sklearn import metrics
 from munkres import Munkres
 
 
+def decoding_cluster_from_tree(tree, num_clusters):
+    pass
+
+
 class cluster_metrics:
     def __init__(self, trues, predicts):
         self.trues = trues

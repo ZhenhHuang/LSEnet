@@ -13,8 +13,8 @@ import numpy as np
 
 def load_data(configs):
     # dataset = KarateClub()
-    # dataset = Football()
-    dataset = Cora()
+    dataset = Football()
+    # dataset = Cora()
     data = {}
     data['feature'] = dataset.feature
     data['num_features'] = dataset.num_features
