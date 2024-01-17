@@ -31,7 +31,7 @@ def geodesic_fn(x, y, nb_points=100):
 def plot_geodesic(x, y, ax):
     """Plots geodesic between x and y."""
     points = geodesic_fn(x, y)
-    ax.plot(points[:, 0], points[:, 1], color='black', linewidth=1.0, alpha=1)
+    ax.plot(points[:, 0], points[:, 1], color='black', linewidth=0.5, alpha=0.8)
 
 
 def plot_leaves(tree, embeddings, labels, height):

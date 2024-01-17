@@ -150,7 +150,7 @@ class HyperSE(nn.Module):
         self.disk_embeddings = {}
         for height, x in embeddings.items():
             x = self.manifold.to_poincare(x)
-            x = self.normalize(x)
+            # x = self.normalize(x)
             x = project(x, k=self.k.to(x.device), eps=MIN_NORM)
             self.disk_embeddings[height] = x
         ind_pairs = {self.height: assignments[self.height]}
