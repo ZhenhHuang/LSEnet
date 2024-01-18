@@ -25,11 +25,10 @@ class LSENet(nn.Module):
                                                      use_bias=False, dropout=dropout, nonlin=self.nonlin)
         self.layers = nn.ModuleList([])
         coeff = int(np.exp(np.log(num_nodes) / height))
-        num_ass = int(num_nodes / coeff)
+        self.num_max = int(num_nodes / coeff)
         for _ in range(height):
-            self.layers.append(LSENetLayer(self.manifold, embed_dim + 1, embed_dim + 1, num_ass,
-                                       bias=False, dropout=dropout, nonlin=self.nonlin))
-            num_ass = int(num_ass / coeff)
+            self.layers.append(LSENetLayer(self.manifold, embed_dim + 1, embed_dim + 1, self.num_max,
+                                           bias=False, dropout=dropout, nonlin=self.nonlin))
 
     def forward(self, x, edge_index):
 
@@ -44,8 +43,11 @@ class LSENet(nn.Module):
         self.assignments = {self.height: torch.eye(self.num_nodes).to(x.device)}
 
         edge = edge_index.clone()
+        prev_num = self.num_max
         for i, layer in enumerate(self.layers):
-            z, edge, ass = layer(z, edge)
+            z, edge, ass, prev_num = layer(z, edge, prev_num)
+            if i == len(self.layers) - 1:
+                z = self.manifold.Frechet_mean(z)
             self.tree_node_coords[self.height - i - 1] = z
             self.assignments[self.height - i - 1] = ass
 

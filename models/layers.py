@@ -8,7 +8,7 @@ from geoopt.manifolds import PoincareBall
 from torch_scatter import scatter_sum
 from torch_geometric.utils import add_self_loops
 import math
-from utils.utils import gumbel_softmax, adjacency2index, index2adjacency
+from utils.utils import gumbel_softmax, adjacency2index, index2adjacency, grad_round
 
 
 class LorentzGraphConvolution(nn.Module):
@@ -141,12 +141,15 @@ class LorentzAssignment(nn.Module):
         super(LorentzAssignment, self).__init__()
         self.assign_linear = LorentzGraphConvolution(manifold, in_features, num_assign, use_att=False,
                                                      use_bias=bias, dropout=dropout, nonlin=nonlin)
+        self.num_estimator = LorentzGraphConvolution(manifold, in_features, 1, use_att=False,
+                                                     use_bias=bias, dropout=dropout, nonlin=nonlin)
 
-    def forward(self, x, edge_index):
+    def forward(self, x, edge_index, prev_num):
         ass = self.assign_linear(x, edge_index)
-        logits = torch.log_softmax(ass, dim=-1)
+        number = grad_round(torch.sigmoid(self.num_estimator(x, edge_index).mean()) * prev_num).long()
+        logits = torch.log_softmax(ass[:, :number], dim=-1)
         ass = gumbel_softmax(logits, hard=True)
-        return ass
+        return ass, number
 
 
 class LSENetLayer(nn.Module):
@@ -158,9 +161,9 @@ class LSENetLayer(nn.Module):
         self.assignor = LorentzAssignment(manifold, out_features, num_assign,
                                                      bias=bias, dropout=dropout, nonlin=nonlin)
 
-    def forward(self, x, edge_index):
+    def forward(self, x, edge_index, prev_num):
         # x = self.conv(x, edge_index)
-        ass = self.assignor(x, edge_index)
+        ass, number = self.assignor(x, edge_index, prev_num)
         support_t = ass.t() @ x
         denorm = (-self.manifold.inner(None, support_t, keepdim=True))
         denorm = denorm.abs().clamp_min(1e-8).sqrt()
@@ -168,4 +171,4 @@ class LSENetLayer(nn.Module):
         adj = index2adjacency(x.shape[0], edge_index)
         adj = ass.t() @ adj @ ass
         edge_index_assigned = adjacency2index(adj)
-        return x_assigned, edge_index_assigned, ass
+        return x_assigned, edge_index_assigned, ass, number

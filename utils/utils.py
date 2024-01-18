@@ -2,6 +2,10 @@ import torch
 import torch.nn.functional as F
 
 
+def grad_round(x):
+    return torch.round(x) - x.detach() + x
+
+
 def select_activation(activation):
     if activation == 'elu':
         return F.elu

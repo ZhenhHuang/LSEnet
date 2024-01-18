@@ -25,3 +25,13 @@ class Lorentz(geoopt.Lorentz):
                 / (1.0 - x_norm_square + eps)
         )
         return res
+
+    def Frechet_mean(self, x, weights=None, keepdim=False):
+        if weights is None:
+            z = torch.sum(x, dim=0, keepdim=True)
+        else:
+            z = torch.sum(x * weights, dim=0, keepdim=keepdim)
+        denorm = self.inner(None, z, keepdim=keepdim)
+        denorm = denorm.abs().clamp_min(1e-8).sqrt()
+        z = z / denorm
+        return z
