@@ -1,11 +1,25 @@
 import numpy as np
 from sklearn import metrics
 from munkres import Munkres
+import networkx as nx
 
 
-def decoding_cluster_from_tree(tree, num_clusters):
-    pass
-
+def decoding_cluster_from_tree(manifold, tree: nx.Graph, num_clusters, num_nodes):
+    root = tree.nodes[num_nodes]
+    root_coords = root['coords']
+    dist_dict = {}
+    for u in tree.nodes():
+        if u != num_nodes:
+            dist_dict[u] = manifold.dist(root_coords, tree.nodes[u]['coords']).numpy()
+    sorted_list = sorted(dist_dict.items(), reverse=False, key=lambda x: x[1])
+    cluster_dist = {}
+    for i in range(num_clusters):
+        u, _ = sorted_list[i]
+        group = tree.nodes[u]['children']
+        cluster_dist.update({k: i for k in group})
+    results = sorted(cluster_dist.items(), key=lambda x: x[0])
+    results = np.array([x[1] for x in results])
+    return results
 
 class cluster_metrics:
     def __init__(self, trues, predicts):

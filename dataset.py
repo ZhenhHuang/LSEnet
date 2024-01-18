@@ -23,6 +23,7 @@ def load_data(configs):
     data['weight'] = dataset.weight
     data['num_nodes'] = dataset.num_nodes
     data['labels'] = dataset.labels
+    data['num_classes'] = dataset.num_classes
     data['neg_edge_index'] = dataset.neg_edge_index
     return data
 
@@ -37,6 +38,7 @@ class KarateClub:
         self.weight = torch.ones(self.edge_index.shape[1])
         self.degrees = scatter_sum(self.weight, self.edge_index[0])
         self.labels = data.y.tolist()
+        self.num_classes = len(np.unique(self.labels))
         self.neg_edge_index = negative_sampling(data.edge_index)
 
 
@@ -63,6 +65,7 @@ class Football:
         self.weight = torch.ones(self.edge_index.shape[1])
         self.degrees = scatter_sum(self.weight, self.edge_index[0])
         self.labels = data.value.tolist()
+        self.num_classes = len(np.unique(self.labels))
         self.neg_edge_index = negative_sampling(data.edge_index)
 
 
@@ -77,4 +80,5 @@ class Cora:
         self.weight = torch.ones(self.edge_index.shape[1])
         self.degrees = scatter_sum(self.weight, self.edge_index[0])
         self.labels = data.y.tolist()
+        self.num_classes = len(np.unique(self.labels))
         self.neg_edge_index = negative_sampling(data.edge_index)

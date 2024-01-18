@@ -58,18 +58,33 @@ def to_networkx_tree(tree: Node, embeddings):
     edges = []
     nodes = []
 
-    def search_edges(node: Node, nodes_list, edges_list):
+    def search_edges(node: Node, nodes_list, edges_list, height=0):
         # if node is a leaf
         if len(node.children) < 1:
-            nodes_list.append((node.tree_index, {'coords': node.coords.reshape(-1), 'is_leaf': node.is_leaf}))
+            nodes_list.append(
+                (
+                    node.tree_index,
+                 {'coords': node.coords.reshape(-1),
+                  'is_leaf': node.is_leaf,
+                  'children': node.index,
+                  'height': height}
+                 )
+            )
             return
         for child in node.children:
             edges_list.append((node.tree_index, child.tree_index))
-            search_edges(child, nodes_list, edges_list)
-        nodes_list.append((node.tree_index, {'coords': node.coords.reshape(-1), 'is_leaf': node.is_leaf}))
-        # edges_list += [(node.tree_index, child.tree_index) for child in node.children]
+            search_edges(child, nodes_list, edges_list, height + 1)
+        nodes_list.append(
+            (
+                node.tree_index,
+                {'coords': node.coords.reshape(-1),
+                 'is_leaf': node.is_leaf,
+                 'children': node.index,
+                 'height': height}
+            )
+        )
 
-    search_edges(tree, nodes, edges)
+    search_edges(tree, nodes, edges, height=0)
     graph = nx.Graph()
     graph.add_nodes_from(nodes)
     graph.add_edges_from(edges)

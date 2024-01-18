@@ -4,12 +4,13 @@ import torch.nn.functional as F
 import torch.nn as nn
 from models.hyperSE import HyperSE
 from geoopt.optim import RiemannianAdam
-from utils.eval_utils import cluster_metrics
+from utils.eval_utils import decoding_cluster_from_tree, cluster_metrics
 from utils.plot_utils import plot_leaves
 from utils.decode import construct_tree, to_networkx_tree
 from dataset import load_data
 from utils.train_utils import EarlyStopping
 from logger import create_logger
+from manifold.poincare import Poincare
 
 
 class Exp:
@@ -61,9 +62,10 @@ class Exp:
             #     if epoch % self.configs.eval_freq == 0:
             #         logger.info("---------------Evaluation Start-----------------")
             model.eval()
-            from sklearn.cluster import KMeans
-            kmeans = KMeans(n_clusters=len(np.unique(data['labels'])))
-            predicts = kmeans.fit_predict(embeddings)
+            # from sklearn.cluster import KMeans
+            # kmeans = KMeans(n_clusters=len(np.unique(data['labels'])))
+            # predicts = kmeans.fit_predict(embeddings)
+            predicts = decoding_cluster_from_tree(Poincare(), tree_graph, data['num_classes'], data['num_nodes'])
             trues = data['labels']
 
             acc, nmi, f1, ari = [], [], [], []
