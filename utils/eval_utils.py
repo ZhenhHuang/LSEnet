@@ -4,22 +4,66 @@ from munkres import Munkres
 import networkx as nx
 
 
-def decoding_cluster_from_tree(manifold, tree: nx.Graph, num_clusters, num_nodes):
+def decoding_cluster_from_tree(manifold, tree: nx.Graph, num_clusters, num_nodes, height):
     root = tree.nodes[num_nodes]
     root_coords = root['coords']
-    dist_dict = {}
+    dist_dict = {}  # for every height of tree
     for u in tree.nodes():
-        if u != num_nodes:
-            dist_dict[u] = manifold.dist(root_coords, tree.nodes[u]['coords']).numpy()
-    sorted_list = sorted(dist_dict.items(), reverse=False, key=lambda x: x[1])
+        if u != num_nodes:  # u is not root
+            h = tree.nodes[u]['height']
+            dist_dict[h] = dist_dict.get(h, {})
+            dist_dict[h].update({u: manifold.dist(root_coords, tree.nodes[u]['coords']).numpy()})
+
+    h = 1
+    sorted_dist_list = sorted(dist_dict[h].items(), reverse=False, key=lambda x: x[1])
+    count = len(sorted_dist_list)
+    group_list = [([u], dist) for u, dist in sorted_dist_list]  # [ ([u], dist_u) ]
+    pos = 0
+
+    while count > num_clusters:
+        group_list, count = merge_nodes_once(group_list, count)
+
+    while count < num_clusters:
+        h = h + 1   # search next level
+        while pos < len(group_list):
+            v1, d1 = group_list[pos]  # node to split
+            sub_level_set = [([v], dist_dict[h][v])
+                             for u, v in tree.edges(v1[0])
+                             if tree.nodes[v]['height'] == h]   # [ ([v], dist_v) ]
+            sub_level_set = sorted(sub_level_set, key=lambda x: x[1])
+            count += len(sub_level_set) - 1
+            del group_list[pos]     # del the position node which will be split
+            if count > num_clusters:
+                while count > num_clusters:
+                    sub_level_set, count = merge_nodes_once(sub_level_set, count)
+                group_list += sub_level_set    # Now count == num_clusters
+                break
+            elif count == num_clusters:
+                group_list += sub_level_set
+                break
+            else:
+                pos += 1
+
     cluster_dist = {}
     for i in range(num_clusters):
-        u, _ = sorted_list[i]
-        group = tree.nodes[u]['children']
+        u_list, _ = group_list[i]
+        group = []
+        for u in u_list:
+            group += tree.nodes[u]['children']
         cluster_dist.update({k: i for k in group})
     results = sorted(cluster_dist.items(), key=lambda x: x[0])
     results = np.array([x[1] for x in results])
     return results
+
+
+def merge_nodes_once(group_list, count):
+    v1, v2 = group_list[-1], group_list[-2]
+    merged_item = (v1[0] + v2[0], min(v1[1], v2[1]))
+    del group_list[-2:]
+    group_list.append(merged_item)
+    count -= 1
+    return group_list, count
+
 
 class cluster_metrics:
     def __init__(self, trues, predicts):

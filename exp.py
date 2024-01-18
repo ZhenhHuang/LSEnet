@@ -62,10 +62,9 @@ class Exp:
             #     if epoch % self.configs.eval_freq == 0:
             #         logger.info("---------------Evaluation Start-----------------")
             model.eval()
-            # from sklearn.cluster import KMeans
-            # kmeans = KMeans(n_clusters=len(np.unique(data['labels'])))
-            # predicts = kmeans.fit_predict(embeddings)
-            predicts = decoding_cluster_from_tree(Poincare(), tree_graph, data['num_classes'], data['num_nodes'])
+            predicts = decoding_cluster_from_tree(Poincare(), tree_graph,
+                                                  data['num_classes'], data['num_nodes'],
+                                                  height=self.configs.height)
             trues = data['labels']
 
             acc, nmi, f1, ari = [], [], [], []
