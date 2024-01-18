@@ -55,8 +55,8 @@ class Exp:
             embeddings = model(data, device).detach().cpu()
             tree = construct_tree(torch.tensor([i for i in range(data['num_nodes'])]).long(),
                                   model.manifold,
-                                  embeddings, model.ind_pairs, height=self.configs.height, k=1,
-                                  nodes_count=embeddings.shape[0])
+                                  embeddings, model.ind_pairs, height=self.configs.height,
+                                  num_nodes=embeddings.shape[0])
             tree_graph = to_networkx_tree(tree, embeddings)
             plot_leaves(tree_graph, embeddings.numpy(), data['labels'], height=self.configs.height)
             #     if epoch % self.configs.eval_freq == 0:

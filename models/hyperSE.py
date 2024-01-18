@@ -9,6 +9,7 @@ from torch_scatter import scatter_sum
 from utils.decode import construct_tree
 from models.layers import LorentzGraphConvolution, LorentzLinear
 from manifold.lorentz import Lorentz
+from manifold.poincare import Poincare
 from models.encoders import GraphEncoder
 import math
 from models.l_se_net import LSENet
@@ -197,7 +198,7 @@ class HyperSE(nn.Module):
             d_log_sum_k = (degrees - weight_sum) * log_sum_dl_k  # (N, )
             d_log_sum_k_1 = (degrees - weight_sum) * log_sum_dl_k_1  # (N, )
             loss += torch.sum(d_log_sum_k - d_log_sum_k_1)
-        loss = -1 / vol_G * loss + self.manifold.dist0(embeddings[0])
+        loss = -1 / vol_G * loss + Poincare().dist0(self.manifold.to_poincare(embeddings[0]))
 
         neg_edge_index = data['neg_edge_index'].to(device)
         edges = torch.concat([edge_index, neg_edge_index], dim=-1)

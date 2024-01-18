@@ -9,7 +9,7 @@ from copy import deepcopy
 class Node:
     def __init__(self, index: list, embeddings: torch.Tensor, coords=None, tree_index=None, is_leaf=False):
         self.index = index  # T_alpha
-        self.embeddings = embeddings    # coordinates of nodes in T_alpha
+        self.embeddings = embeddings  # coordinates of nodes in T_alpha
         self.children = []
         self.coords = coords  # node coordinates
         self.tree_index = tree_index
@@ -28,30 +28,36 @@ def build_equiv_graph(L_nodes, embedding, weights, height, k, epsilon=0.9) -> to
     return edges
 
 
-def construct_tree(L_nodes: torch.LongTensor, manifold, embeddings: torch.Tensor, L_weights: list, height, k, nodes_count):
-    root = Node(L_nodes, embeddings[L_nodes], tree_index=nodes_count)
-    root.coords = Frechet_mean_poincare(manifold, root.embeddings)
-    if k == height:
-        for i in L_nodes:
-            root.children.append(Node([i], embeddings[i], embeddings[i], tree_index=i.item(), is_leaf=True))
+def construct_tree(nodes_list: torch.LongTensor, manifold, node_embeddings: torch.Tensor, weights_list: list, height, num_nodes):
+    nodes_count = num_nodes
+
+    def _plan_DFS(L_nodes: torch.LongTensor, _manifold, embeddings: torch.Tensor, L_weights: list, _height, k):
+        nonlocal nodes_count
+        root = Node(L_nodes, embeddings[L_nodes], tree_index=nodes_count)
+        root.coords = Frechet_mean_poincare(_manifold, root.embeddings)
+        if k == _height:
+            for i in L_nodes:
+                root.children.append(Node([i], embeddings[i], embeddings[i], tree_index=i.item(), is_leaf=True))
+            return root
+        if k > _height or len(L_nodes) <= 1:
+            return root
+        edges = build_equiv_graph(L_nodes, root.embeddings, L_weights[k].detach().cpu(), _height, k=k)
+        G = nx.Graph()
+        G.add_nodes_from(L_nodes.tolist())
+        G.add_edges_from(edges)
+        children = nx.connected_components(G)
+        children = [list(child) for child in children]
+        if len(children) <= 1:
+            for i in L_nodes:
+                root.children.append(Node([i], embeddings[i], embeddings[i], tree_index=i.item(), is_leaf=True))
+            return root
+        for child in children:
+            nodes_count += 1
+            root.children.append(_plan_DFS(torch.tensor(child).long(),
+                                           _manifold, embeddings, L_weights, _height, k + 1))
         return root
-    if k > height or len(L_nodes) <= 1:
-        return root
-    edges = build_equiv_graph(L_nodes, root.embeddings, L_weights[k].detach().cpu(), height, k=k)
-    G = nx.Graph()
-    G.add_nodes_from(L_nodes.tolist())
-    G.add_edges_from(edges)
-    children = nx.connected_components(G)
-    children = [list(child) for child in children]
-    if len(children) <= 1:
-        for i in L_nodes:
-            root.children.append(Node([i], embeddings[i], embeddings[i], tree_index=i.item(), is_leaf=True))
-        return root
-    for child in children:
-        nodes_count += 1
-        root.children.append(construct_tree(torch.tensor(child).long(),
-                                            manifold, embeddings, L_weights, height, k + 1, nodes_count))
-    return root
+
+    return _plan_DFS(nodes_list, manifold, node_embeddings, weights_list, height, 1)
 
 
 def to_networkx_tree(tree: Node, embeddings):
@@ -64,11 +70,11 @@ def to_networkx_tree(tree: Node, embeddings):
             nodes_list.append(
                 (
                     node.tree_index,
-                 {'coords': node.coords.reshape(-1),
-                  'is_leaf': node.is_leaf,
-                  'children': node.index,
-                  'height': height}
-                 )
+                    {'coords': node.coords.reshape(-1),
+                     'is_leaf': node.is_leaf,
+                     'children': node.index,
+                     'height': height}
+                )
             )
             return
         for child in node.children:
