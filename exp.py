@@ -21,10 +21,16 @@ class Exp:
         else:
             self.device = torch.device('cpu')
 
+    def send_device(self, data):
+        for k, v in data.items():
+            if isinstance(v, torch.Tensor):
+                data[k] = v.to(self.device)
+
     def train(self):
         logger = create_logger(self.configs.log_path)
         device = self.device
         data = load_data(self.configs)
+        self.send_device(data)
 
         for exp_iter in range(self.configs.exp_iters):
             logger.info(f"\ntrain iters {exp_iter}")
@@ -55,7 +61,7 @@ class Exp:
             embeddings = model(data, device).detach().cpu()
             tree = construct_tree(torch.tensor([i for i in range(data['num_nodes'])]).long(),
                                   model.manifold,
-                                  embeddings, model.ind_pairs, height=self.configs.height,
+                                  embeddings, model.ass_mat, height=self.configs.height,
                                   num_nodes=embeddings.shape[0])
             tree_graph = to_networkx_tree(tree, embeddings)
             plot_leaves(tree_graph, embeddings.numpy(), data['labels'], height=self.configs.height)

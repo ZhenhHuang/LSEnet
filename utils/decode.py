@@ -28,10 +28,10 @@ def build_equiv_graph(L_nodes, embedding, weights, height, k, epsilon=0.9) -> to
     return edges
 
 
-def construct_tree(nodes_list: torch.LongTensor, manifold, node_embeddings: torch.Tensor, weights_list: list, height, num_nodes):
+def construct_tree(nodes_list: torch.LongTensor, manifold, node_embeddings: torch.Tensor, ass_list: list, height, num_nodes):
     nodes_count = num_nodes
 
-    def _plan_DFS(L_nodes: torch.LongTensor, _manifold, embeddings: torch.Tensor, L_weights: list, _height, k):
+    def _plan_DFS(L_nodes: torch.LongTensor, _manifold, embeddings: torch.Tensor, L_ass: list, _height, k):
         nonlocal nodes_count
         root = Node(L_nodes, embeddings[L_nodes], tree_index=nodes_count)
         root.coords = Frechet_mean_poincare(_manifold, root.embeddings)
@@ -41,23 +41,24 @@ def construct_tree(nodes_list: torch.LongTensor, manifold, node_embeddings: torc
             return root
         if k > _height or len(L_nodes) <= 1:
             return root
-        edges = build_equiv_graph(L_nodes, root.embeddings, L_weights[k].detach().cpu(), _height, k=k)
-        G = nx.Graph()
-        G.add_nodes_from(L_nodes.tolist())
-        G.add_edges_from(edges)
-        children = nx.connected_components(G)
-        children = [list(child) for child in children]
+
+        temp_ass = L_ass[k][L_nodes].cpu()
+        children = []
+        for j in range(temp_ass.shape[-1]):
+            temp_child = L_nodes[temp_ass[:, j].nonzero().flatten()]
+            if len(temp_child) > 0:
+                children.append(temp_child)
+
         if len(children) <= 1:
             for i in L_nodes:
                 root.children.append(Node([i], embeddings[i], embeddings[i], tree_index=i.item(), is_leaf=True))
             return root
         for child in children:
             nodes_count += 1
-            root.children.append(_plan_DFS(torch.tensor(child).long(),
-                                           _manifold, embeddings, L_weights, _height, k + 1))
+            root.children.append(_plan_DFS(child, _manifold, embeddings, L_ass, _height, k + 1))
         return root
 
-    return _plan_DFS(nodes_list, manifold, node_embeddings, weights_list, height, 1)
+    return _plan_DFS(nodes_list, manifold, node_embeddings, ass_list, height, 1)
 
 
 def to_networkx_tree(tree: Node, embeddings):

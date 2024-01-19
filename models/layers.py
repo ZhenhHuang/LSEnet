@@ -139,17 +139,17 @@ class LorentzAtt(nn.Module):
 class LorentzAssignment(nn.Module):
     def __init__(self, manifold, in_features, num_assign, dropout, bias=False, nonlin=None):
         super(LorentzAssignment, self).__init__()
-        self.assign_linear = LorentzGraphConvolution(manifold, in_features, num_assign, use_att=False,
-                                                     use_bias=bias, dropout=dropout, nonlin=nonlin)
-        self.num_estimator = LorentzGraphConvolution(manifold, in_features, 1, use_att=False,
-                                                     use_bias=bias, dropout=dropout, nonlin=nonlin)
+        # self.assign_linear = LorentzGraphConvolution(manifold, in_features, num_assign, use_att=False,
+        #                                              use_bias=bias, dropout=dropout, nonlin=nonlin)
+        self.assign_linear = LorentzLinear(manifold, in_features, num_assign,
+                                                     bias=bias, dropout=dropout, nonlin=nonlin)
 
-    def forward(self, x, edge_index, prev_num):
-        ass = self.assign_linear(x, edge_index)
-        number = grad_round(torch.sigmoid(self.num_estimator(x, edge_index).mean()) * prev_num).long()
-        logits = torch.log_softmax(ass[:, :number], dim=-1)
+    def forward(self, x, edge_index):
+        # ass = self.assign_linear(x, edge_index)
+        ass = self.assign_linear(x)
+        logits = torch.log_softmax(ass, dim=-1)
         ass = gumbel_softmax(logits, hard=True)
-        return ass, number
+        return ass
 
 
 class LSENetLayer(nn.Module):
@@ -158,12 +158,14 @@ class LSENetLayer(nn.Module):
         self.manifold = manifold
         # self.conv = LorentzGraphConvolution(manifold, in_features, out_features, use_att=False,
         #                                              use_bias=bias, dropout=dropout, nonlin=nonlin)
+        self.conv = LorentzLinear(manifold, in_features, out_features,
+                                                     bias=bias, dropout=dropout, nonlin=None)
         self.assignor = LorentzAssignment(manifold, out_features, num_assign,
                                                      bias=bias, dropout=dropout, nonlin=nonlin)
 
-    def forward(self, x, edge_index, prev_num):
-        # x = self.conv(x, edge_index)
-        ass, number = self.assignor(x, edge_index, prev_num)
+    def forward(self, x, edge_index):
+        x = self.conv(x)
+        ass = self.assignor(x, edge_index)
         support_t = ass.t() @ x
         denorm = (-self.manifold.inner(None, support_t, keepdim=True))
         denorm = denorm.abs().clamp_min(1e-8).sqrt()
@@ -171,4 +173,4 @@ class LSENetLayer(nn.Module):
         adj = index2adjacency(x.shape[0], edge_index)
         adj = ass.t() @ adj @ ass
         edge_index_assigned = adjacency2index(adj)
-        return x_assigned, edge_index_assigned, ass, number
+        return x_assigned, edge_index_assigned, ass

@@ -16,47 +16,32 @@ from models.l_se_net import LSENet
 
 
 MIN_NORM = 1e-15
+EPS = 1e-6
 
 
 class HyperSE(nn.Module):
     def __init__(self, in_features, num_nodes, height=3, temperature=0.1,
-                 embed_dim=2, dropout=0.1, nonlin='relu', max_size=0.999):
+                 embed_dim=2, dropout=0.1, nonlin='relu'):
         super(HyperSE, self).__init__()
-        init_size = 1e-2
-        self.k = torch.tensor([-1.0])
         self.num_nodes = num_nodes
         self.height = height
         self.tau = temperature
         self.manifold = Lorentz()
-        self.scale = nn.Parameter(torch.tensor([init_size]), requires_grad=True)
-        self.init_size = init_size
-        self.min_size = 1e-2
-        self.max_size = max_size
         self.encoder = LSENet(self.manifold, in_features, num_nodes, height, temperature, embed_dim, dropout, nonlin)
 
     def forward(self, data, device=torch.device('cuda:0')):
         features = data['feature'].to(device)
         edge_index = data['edge_index'].to(device)
-        embeddings, assignments = self.encoder(features, edge_index)
+        embeddings, clu_mat = self.encoder(features, edge_index)
         self.disk_embeddings = {}
         for height, x in embeddings.items():
             x = self.manifold.to_poincare(x)
-            # x = self.normalize(x)
-            x = project(x, k=self.k.to(x.device), eps=MIN_NORM)
             self.disk_embeddings[height] = x
-        ind_pairs = {self.height: assignments[self.height]}
-        temp = assignments[self.height]
-        for k in range(self.height - 1, -1, -1):
-            temp = temp @ assignments[k]
-            ind_pairs[k] = temp @ temp.t()
-        self.ind_pairs = ind_pairs
+        ass_mat = {self.height: torch.eye(self.num_nodes).to(device)}
+        for k in range(self.height - 1, 0, -1):
+            ass_mat[k] = ass_mat[k + 1] @ clu_mat[k + 1]
+        self.ass_mat = ass_mat
         return self.disk_embeddings[self.height]
-
-    def normalize(self, embeddings):
-        min_size = self.min_size
-        max_size = self.max_size
-        embeddings_normed = F.normalize(embeddings, p=2, dim=-1) * 0.999
-        return embeddings_normed
 
     def loss(self, data, device=torch.device('cuda:0')):
         """_summary_
@@ -65,29 +50,29 @@ class HyperSE(nn.Module):
             data: dict
             device: torch.Device
         """
-        weight = data['weight'].to(device)
-        edge_index = data['edge_index'].to(device)
-        degrees = data['degrees'].to(device)
-        features = data['feature'].to(device)
+        weight = data['weight']
+        edge_index = data['edge_index']
+        degrees = data['degrees']
+        features = data['feature']
 
-        embeddings, assignments = self.encoder(features, edge_index)
+        embeddings, clu_mat = self.encoder(features, edge_index)
 
         loss = 0
         vol_G = weight.sum()
-        ind_pairs = {self.height: assignments[self.height]}
-        temp = assignments[self.height]
-        for k in range(self.height - 1, -1, -1):
-            temp = temp @ assignments[k]
-            ind_pairs[k] = temp @ temp.t()
+        ass_mat = {self.height: torch.eye(self.num_nodes).to(device)}
+        vol_dict = {self.height: degrees, 0: vol_G.unsqueeze(0)}
+        for k in range(self.height - 1, 0, -1):
+            ass_mat[k] = ass_mat[k + 1] @ clu_mat[k + 1]
+            vol_dict[k] = torch.einsum('ij, i->j', ass_mat[k], degrees)
 
         for k in range(1, self.height + 1):
-            log_sum_dl_k = torch.log2(torch.sum(ind_pairs[k] * degrees, -1))  # (N, )
-            log_sum_dl_k_1 = torch.log2(torch.sum(ind_pairs[k - 1] * degrees, -1))  # (N, )
-            ind_i_j = ind_pairs[k][edge_index[0], edge_index[1]]
-            weight_sum = scatter_sum(ind_i_j * weight, index=edge_index[0])  # (N, )
-            d_log_sum_k = (degrees - weight_sum) * log_sum_dl_k  # (N, )
-            d_log_sum_k_1 = (degrees - weight_sum) * log_sum_dl_k_1  # (N, )
-            loss += torch.sum(d_log_sum_k - d_log_sum_k_1)
+            vol_parent = torch.einsum('ij, j->i', clu_mat[k], vol_dict[k - 1])  # (N_k, )
+            log_vol_ratio_k = torch.log2((vol_dict[k] + EPS) / (vol_parent + EPS))  # (N_k, )
+            ass_i = ass_mat[k][edge_index[0]]   # (E, N_k)
+            ass_j = ass_mat[k][edge_index[1]]
+            weight_sum = torch.einsum('en, e->n', ass_i * ass_j, weight)  # (N_k, )
+            delta_vol = vol_dict[k] - weight_sum    # (N_k, )
+            loss += torch.sum(delta_vol * log_vol_ratio_k)
         loss = -1 / vol_G * loss + Poincare().dist0(self.manifold.to_poincare(embeddings[0]))
 
         neg_edge_index = data['neg_edge_index'].to(device)
