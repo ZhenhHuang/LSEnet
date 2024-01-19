@@ -61,7 +61,7 @@ def construct_tree(nodes_list: torch.LongTensor, manifold, node_embeddings: torc
     return _plan_DFS(nodes_list, manifold, node_embeddings, ass_list, height, 1)
 
 
-def to_networkx_tree(tree: Node, embeddings):
+def to_networkx_tree(tree: Node, manifold):
     edges = []
     nodes = []
 
@@ -79,7 +79,11 @@ def to_networkx_tree(tree: Node, embeddings):
             )
             return
         for child in node.children:
-            edges_list.append((node.tree_index, child.tree_index))
+            edges_list.append(
+                (node.tree_index,
+                 child.tree_index,
+                 {'weight': torch.sigmoid(1.-manifold.dist_cpu(node.coords, child.coords)).item()}
+                 ))
             search_edges(child, nodes_list, edges_list, height + 1)
         nodes_list.append(
             (

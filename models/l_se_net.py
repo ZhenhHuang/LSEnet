@@ -5,6 +5,7 @@ import numpy as np
 from torch_scatter import scatter_sum
 from utils.decode import construct_tree
 from models.layers import LSENetLayer, LorentzGraphConvolution
+from models.encoders import GraphEncoder
 from manifold.lorentz import Lorentz
 from utils.utils import select_activation
 from models.encoders import GraphEncoder
@@ -21,14 +22,15 @@ class LSENet(nn.Module):
         self.num_nodes = num_nodes
         self.height = height
         self.scale = nn.Parameter(torch.tensor([0.999]), requires_grad=True)
-        self.embed_layer = LorentzGraphConvolution(self.manifold, in_features + 1, embed_dim + 1, use_att=False,
-                                                     use_bias=False, dropout=dropout, nonlin=None)
+        self.embed_layer = GraphEncoder(self.manifold, 2, in_features + 1, 256, embed_dim + 1, use_att=False,
+                                                     use_bias=False, dropout=dropout, nonlin=self.nonlin)
         self.layers = nn.ModuleList([])
         coeff = int(np.exp(np.log(num_nodes) / height))
         self.num_max = int(num_nodes / coeff)
         for i in range(height - 1):
             self.layers.append(LSENetLayer(self.manifold, embed_dim + 1, embed_dim + 1, self.num_max,
-                                           bias=False, dropout=dropout, nonlin=self.nonlin))
+                                           bias=True, use_att=False, dropout=dropout,
+                                           nonlin=self.nonlin, temperature=self.temperature))
             self.num_max = int(self.num_max / coeff)
 
     def forward(self, x, edge_index):

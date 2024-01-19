@@ -1,5 +1,6 @@
 import geoopt
 import torch
+import geoopt.manifolds.lorentz.math as lmath
 
 
 class Lorentz(geoopt.Lorentz):
@@ -35,3 +36,9 @@ class Lorentz(geoopt.Lorentz):
         denorm = denorm.abs().clamp_min(1e-8).sqrt()
         z = z / denorm
         return z
+
+    def dist_cpu(
+        self, x: torch.Tensor, y: torch.Tensor, *, keepdim=False, dim=-1
+    ) -> torch.Tensor:
+        k = self.k.cpu()
+        return lmath.dist(x, y, k=k, keepdim=keepdim, dim=dim).to(x.device)

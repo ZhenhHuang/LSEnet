@@ -1,5 +1,6 @@
 import geoopt
 import torch
+import geoopt.manifolds.stereographic.math as math
 
 
 class Poincare(geoopt.PoincareBall):
@@ -20,3 +21,9 @@ class Poincare(geoopt.PoincareBall):
                 / (1.0 - x_norm_square + eps)
         )
         return res
+
+    def dist_cpu(
+        self, x: torch.Tensor, y: torch.Tensor, *, keepdim=False, dim=-1
+    ) -> torch.Tensor:
+        k = self.k.cpu()
+        return math.dist(x, y, k=k, keepdim=keepdim, dim=dim)

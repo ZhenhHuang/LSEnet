@@ -20,8 +20,8 @@ EPS = 1e-6
 
 
 class HyperSE(nn.Module):
-    def __init__(self, in_features, num_nodes, height=3, temperature=0.1,
-                 embed_dim=2, dropout=0.1, nonlin='relu'):
+    def __init__(self, in_features, num_nodes, height=3, temperature=0.2,
+                 embed_dim=2, dropout=0.5, nonlin='relu'):
         super(HyperSE, self).__init__()
         self.num_nodes = num_nodes
         self.height = height

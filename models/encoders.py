@@ -6,18 +6,18 @@ from utils.utils import select_activation
 
 
 class GraphEncoder(nn.Module):
-    def __init__(self, manifold, n_layers, in_features, n_hidden, out_dim, dropout, activation='relu', use_att=False):
+    def __init__(self, manifold, n_layers, in_features, n_hidden, out_dim,
+                 dropout, nonlin=None, use_att=False, use_bias=False):
         super(GraphEncoder, self).__init__()
-        act = select_activation(activation)
         self.manifold = manifold
         self.layers = nn.ModuleList([])
         self.layers.append(LorentzGraphConvolution(self.manifold, in_features,
-                                                   n_hidden, False, dropout=dropout, use_att=use_att))
+                                                   n_hidden, use_bias, dropout=dropout, use_att=use_att))
         for i in range(n_layers - 2):
             self.layers.append(LorentzGraphConvolution(self.manifold, n_hidden,
-                                                       n_hidden, False, dropout=dropout, use_att=use_att, nonlin=act))
+                                                       n_hidden, use_bias, dropout=dropout, use_att=use_att, nonlin=nonlin))
         self.layers.append(LorentzGraphConvolution(self.manifold, n_hidden,
-                                                       out_dim, False, dropout=dropout, use_att=use_att, nonlin=act))
+                                                       out_dim, use_bias, dropout=dropout, use_att=use_att, nonlin=nonlin))
 
     def forward(self, x, edge_index):
         for layer in self.layers:

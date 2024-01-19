@@ -1,5 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import networkx as nx
+import pydot
+from networkx.drawing.nx_pydot import graphviz_layout
 
 
 def mobius_add(x, y):
@@ -71,3 +74,11 @@ def get_colors(y, color_seed=1234):
         g = np.random.random()
         colors[k] = (r, g, b)
     return [colors[k] for k in y]
+
+
+def plot_nx_graph(G: nx.Graph, root):
+    fig = plt.figure(figsize=(15, 15))
+    ax = fig.add_subplot(111)
+    pos = graphviz_layout(G, 'dot')
+    nx.draw(G, pos, ax=ax, with_labels=True)
+    plt.show()

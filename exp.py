@@ -5,7 +5,7 @@ import torch.nn as nn
 from models.hyperSE import HyperSE
 from geoopt.optim import RiemannianAdam
 from utils.eval_utils import decoding_cluster_from_tree, cluster_metrics
-from utils.plot_utils import plot_leaves
+from utils.plot_utils import plot_leaves, plot_nx_graph
 from utils.decode import construct_tree, to_networkx_tree
 from dataset import load_data
 from utils.train_utils import EarlyStopping
@@ -34,7 +34,10 @@ class Exp:
 
         for exp_iter in range(self.configs.exp_iters):
             logger.info(f"\ntrain iters {exp_iter}")
-            model = HyperSE(in_features=data['num_features'], num_nodes=data['num_nodes'], height=self.configs.height).to(device)
+            model = HyperSE(in_features=data['num_features'], num_nodes=data['num_nodes'],
+                            height=self.configs.height, temperature=self.configs.temperature,
+                            embed_dim=self.configs.embed_dim, dropout=self.configs.dropout,
+                            nonlin=self.configs.nonlin).to(device)
             optimizer = RiemannianAdam(model.parameters(), lr=self.configs.lr, weight_decay=self.configs.w_decay)
             # pretrained = True
             # if pretrained:
@@ -63,8 +66,9 @@ class Exp:
                                   model.manifold,
                                   embeddings, model.ass_mat, height=self.configs.height,
                                   num_nodes=embeddings.shape[0])
-            tree_graph = to_networkx_tree(tree, embeddings)
+            tree_graph = to_networkx_tree(tree, Poincare())
             plot_leaves(tree_graph, embeddings.numpy(), data['labels'], height=self.configs.height)
+            plot_nx_graph(tree_graph, root=data['num_nodes'])
             #     if epoch % self.configs.eval_freq == 0:
             #         logger.info("---------------Evaluation Start-----------------")
             model.eval()
