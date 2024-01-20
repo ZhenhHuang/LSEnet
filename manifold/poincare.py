@@ -1,6 +1,7 @@
 import geoopt
 import torch
 import geoopt.manifolds.stereographic.math as math
+import geoopt.manifolds.lorentz.math as lmath
 
 
 class Poincare(geoopt.PoincareBall):
@@ -27,3 +28,15 @@ class Poincare(geoopt.PoincareBall):
     ) -> torch.Tensor:
         k = self.k.cpu()
         return math.dist(x, y, k=k, keepdim=keepdim, dim=dim)
+
+    def Frechet_mean(self, embeddings, weights=None, keepdim=False):
+        z = self.to_lorentz(embeddings)
+        if weights is None:
+            z = torch.sum(z, dim=0, keepdim=True)
+        else:
+            z = torch.sum(z * weights, dim=0, keepdim=keepdim)
+        denorm = lmath.inner(z, z, keepdim=keepdim)
+        denorm = denorm.abs().clamp_min(1e-8).sqrt()
+        z = z / denorm
+        z = self.from_lorentz(z).to(embeddings.device)
+        return z

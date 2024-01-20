@@ -11,6 +11,7 @@ from dataset import load_data
 from utils.train_utils import EarlyStopping
 from logger import create_logger
 from manifold.poincare import Poincare
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
 class Exp:
@@ -32,6 +33,8 @@ class Exp:
         data = load_data(self.configs)
         self.send_device(data)
 
+        best_cluster_result = {}
+        best_cluster = {'acc': 0, 'nmi': 0, 'f1': 0, 'ari': 0}
         for exp_iter in range(self.configs.exp_iters):
             logger.info(f"\ntrain iters {exp_iter}")
             model = HyperSE(in_features=data['num_features'], num_nodes=data['num_nodes'],
@@ -39,18 +42,17 @@ class Exp:
                             embed_dim=self.configs.embed_dim, dropout=self.configs.dropout,
                             nonlin=self.configs.nonlin).to(device)
             optimizer = RiemannianAdam(model.parameters(), lr=self.configs.lr, weight_decay=self.configs.w_decay)
+            scheduler = ReduceLROnPlateau(optimizer)
             # pretrained = True
             # if pretrained:
             #     model.load_state_dict(torch.load(f'checkpoints/{self.configs.save_path}'))
             early_stopping = EarlyStopping(self.configs.patience)
             logger.info("--------------------------Training Start-------------------------")
-            best_cluster = {'acc': 0, 'nmi': 0, 'f1': 0, 'ari': 0}
-            best_cluster_result = {}
             n_cluster_trials = self.configs.n_cluster_trials
-
             for epoch in range(1, self.configs.epochs + 1):
                 model.train()
                 loss = model.loss(data, device)
+                scheduler.step(loss)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -60,7 +62,9 @@ class Exp:
                 if early_stopping.early_stop:
                     logger.info("Early stopping")
                     break
-
+            #     if epoch % self.configs.eval_freq == 0:
+            #         logger.info("---------------Evaluation Start-----------------")
+            model.eval()
             embeddings = model(data, device).detach().cpu()
             tree = construct_tree(torch.tensor([i for i in range(data['num_nodes'])]).long(),
                                   model.manifold,
@@ -69,9 +73,6 @@ class Exp:
             tree_graph = to_networkx_tree(tree, Poincare())
             plot_leaves(tree_graph, embeddings.numpy(), data['labels'], height=self.configs.height)
             plot_nx_graph(tree_graph, root=data['num_nodes'])
-            #     if epoch % self.configs.eval_freq == 0:
-            #         logger.info("---------------Evaluation Start-----------------")
-            model.eval()
             predicts = decoding_cluster_from_tree(Poincare(), tree_graph,
                                                   data['num_classes'], data['num_nodes'],
                                                   height=self.configs.height)
@@ -87,24 +88,24 @@ class Exp:
                 ari.append(ari_)
             acc, nmi, f1, ari = np.mean(acc), np.mean(
                 nmi), np.mean(f1), np.mean(ari)
-            #         if acc > best_cluster['acc']:
-            #             best_cluster['acc'] = acc
-            #             best_cluster_result['acc'] = [acc, nmi, f1, ari]
-            #             torch.save(model, "model.pt")
-            #         if nmi > best_cluster['nmi']:
-            #             best_cluster['nmi'] = nmi
-            #             best_cluster_result['nmi'] = [acc, nmi, f1, ari]
-            #         if f1 > best_cluster['f1']:
-            #             best_cluster['f1'] = f1
-            #             best_cluster_result['f1'] = [acc, nmi, f1, ari]
-            #         if ari > best_cluster['ari']:
-            #             best_cluster['ari'] = ari
-            #             best_cluster_result['ari'] = [acc, nmi, f1, ari]
+            if acc > best_cluster['acc']:
+                best_cluster['acc'] = acc
+                best_cluster_result['acc'] = [acc, nmi, f1, ari]
+                torch.save(model, "model.pt")
+            if nmi > best_cluster['nmi']:
+                best_cluster['nmi'] = nmi
+                best_cluster_result['nmi'] = [acc, nmi, f1, ari]
+            if f1 > best_cluster['f1']:
+                best_cluster['f1'] = f1
+                best_cluster_result['f1'] = [acc, nmi, f1, ari]
+            if ari > best_cluster['ari']:
+                best_cluster['ari'] = ari
+                best_cluster_result['ari'] = [acc, nmi, f1, ari]
             logger.info(
                 f"Epoch {epoch}: ACC: {acc}, NMI: {nmi}, F1: {f1}, ARI: {ari}")
             logger.info(
                 "-------------------------------------------------------------------------")
-            # for k, result in best_cluster_result.items():
-            #     acc, nmi, f1, ari = result
-            #     logger.info(
-            #         f"Best Results according to {k}: ACC: {acc}, NMI: {nmi}, F1: {f1}, ARI: {ari} \n")
+        for k, result in best_cluster_result.items():
+            acc, nmi, f1, ari = result
+            logger.info(
+                f"Best Results according to {k}: ACC: {acc}, NMI: {nmi}, F1: {f1}, ARI: {ari} \n")

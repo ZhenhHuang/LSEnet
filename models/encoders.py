@@ -12,7 +12,7 @@ class GraphEncoder(nn.Module):
         self.manifold = manifold
         self.layers = nn.ModuleList([])
         self.layers.append(LorentzGraphConvolution(self.manifold, in_features,
-                                                   n_hidden, use_bias, dropout=dropout, use_att=use_att))
+                                                   n_hidden, use_bias, dropout=dropout, use_att=use_att, nonlin=None))
         for i in range(n_layers - 2):
             self.layers.append(LorentzGraphConvolution(self.manifold, n_hidden,
                                                        n_hidden, use_bias, dropout=dropout, use_att=use_att, nonlin=nonlin))

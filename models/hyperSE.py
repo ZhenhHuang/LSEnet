@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from geoopt.manifolds import PoincareBall
 from geoopt.manifolds.stereographic.math import project, dist0, dist
 import numpy as np
-from utils.lca import hyp_lca, equiv_weights
+from utils.utils import gumbel_softmax
 from torch_scatter import scatter_sum
 from utils.decode import construct_tree
 from models.layers import LorentzGraphConvolution, LorentzLinear
@@ -40,6 +40,8 @@ class HyperSE(nn.Module):
         ass_mat = {self.height: torch.eye(self.num_nodes).to(device)}
         for k in range(self.height - 1, 0, -1):
             ass_mat[k] = ass_mat[k + 1] @ clu_mat[k + 1]
+        for k, v in ass_mat.items():
+            ass_mat[k] = gumbel_softmax(v.log(), temperature=self.tau, hard=True)
         self.ass_mat = ass_mat
         return self.disk_embeddings[self.height]
 

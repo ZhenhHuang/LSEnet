@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 from sklearn import metrics
 from munkres import Munkres
 import networkx as nx
@@ -21,7 +22,7 @@ def decoding_cluster_from_tree(manifold, tree: nx.Graph, num_clusters, num_nodes
     pos = 0
 
     while count > num_clusters:
-        group_list, count = merge_nodes_once(group_list, count)
+        group_list, count = merge_nodes_once(manifold, root_coords, tree, group_list, count)
 
     while count < num_clusters:
         h = h + 1   # search next level
@@ -37,7 +38,7 @@ def decoding_cluster_from_tree(manifold, tree: nx.Graph, num_clusters, num_nodes
             count += len(sub_level_set) - 1
             if count > num_clusters:
                 while count > num_clusters:
-                    sub_level_set, count = merge_nodes_once(sub_level_set, count)
+                    sub_level_set, count = merge_nodes_once(manifold, root_coords, tree, sub_level_set, count)
                 del group_list[pos]  # del the position node which will be split
                 group_list += sub_level_set    # Now count == num_clusters
                 break
@@ -62,11 +63,16 @@ def decoding_cluster_from_tree(manifold, tree: nx.Graph, num_clusters, num_nodes
     return results
 
 
-def merge_nodes_once(group_list, count):
+def merge_nodes_once(manifold, root_coords, tree, group_list, count):
     v1, v2 = group_list[-1], group_list[-2]
-    merged_item = (v1[0] + v2[0], min(v1[1], v2[1]))
+    merged_node = v1[0] + v2[0]
+    merged_coords = torch.stack([tree.nodes[v]['coords'] for v in merged_node], dim=0)
+    merged_point = manifold.Frechet_mean(merged_coords)
+    merged_dist = manifold.dist(merged_point, root_coords).cpu().numpy()
+    merged_item = (merged_node, merged_dist)
     del group_list[-2:]
     group_list.append(merged_item)
+    group_list = sorted(group_list, key=lambda x: x[1])
     count -= 1
     return group_list, count
 

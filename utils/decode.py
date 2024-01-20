@@ -16,18 +16,6 @@ class Node:
         self.is_leaf = is_leaf
 
 
-def build_equiv_graph(L_nodes, embedding, weights, height, k, epsilon=0.9) -> torch.Tensor:
-    if k == height:
-        connect = torch.eye(L_nodes.shape[0])
-    else:
-        ind_pairs = weights[L_nodes[:, None], L_nodes[None]]
-        connect = (ind_pairs > epsilon).long()
-    i, j = torch.where(connect == 1)
-    edges = torch.stack([L_nodes[i], L_nodes[j]], dim=-1)
-    edges = [tuple(e.tolist()) for e in edges]
-    return edges
-
-
 def construct_tree(nodes_list: torch.LongTensor, manifold, node_embeddings: torch.Tensor, ass_list: list, height, num_nodes):
     nodes_count = num_nodes
 
@@ -35,11 +23,16 @@ def construct_tree(nodes_list: torch.LongTensor, manifold, node_embeddings: torc
         nonlocal nodes_count
         root = Node(L_nodes, embeddings[L_nodes], tree_index=nodes_count)
         root.coords = Frechet_mean_poincare(_manifold, root.embeddings)
+
+        if len(L_nodes) == 0:
+            return None
+
+        if k > _height or len(L_nodes) == 1:
+            return root
+
         if k == _height:
             for i in L_nodes:
                 root.children.append(Node([i], embeddings[i], embeddings[i], tree_index=i.item(), is_leaf=True))
-            return root
-        if k > _height or len(L_nodes) <= 1:
             return root
 
         temp_ass = L_ass[k][L_nodes].cpu()
@@ -55,7 +48,9 @@ def construct_tree(nodes_list: torch.LongTensor, manifold, node_embeddings: torc
             return root
         for child in children:
             nodes_count += 1
-            root.children.append(_plan_DFS(child, _manifold, embeddings, L_ass, _height, k + 1))
+            child_node = _plan_DFS(child, _manifold, embeddings, L_ass, _height, k + 1)
+            if child_node is not None:
+                root.children.append(child_node)
         return root
 
     return _plan_DFS(nodes_list, manifold, node_embeddings, ass_list, height, 1)

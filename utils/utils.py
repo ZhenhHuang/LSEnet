@@ -90,7 +90,10 @@ def adjacency2index(adjacency, weight=False, topk=False, k=10):
         return edge_index
 
 
-def index2adjacency(N, edge_index):
+def index2adjacency(N, edge_index, weight=None):
     adjacency = torch.zeros(N, N).to(edge_index.device)
-    adjacency[edge_index[0], edge_index[1]] = 1
+    if weight is None:
+        adjacency[edge_index[0], edge_index[1]] = 1
+    else:
+        adjacency[edge_index[0], edge_index[1]] = weight.reshape(-1)
     return adjacency
