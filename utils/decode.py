@@ -28,7 +28,7 @@ def construct_tree(nodes_list: torch.LongTensor, manifold, node_embeddings: torc
             return None
 
         if k > _height or len(L_nodes) == 1:
-            return Node(L_nodes[0], embeddings[L_nodes[0]], embeddings[L_nodes[0]],
+            return Node([L_nodes[0]], embeddings[L_nodes[0]], embeddings[L_nodes[0]],
                         tree_index=L_nodes[0].item(), is_leaf=True)
 
         if k == _height:

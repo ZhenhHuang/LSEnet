@@ -30,7 +30,7 @@ class LSENet(nn.Module):
         self.num_max = int(num_nodes / decay_rate)
         for i in range(height - 1):
             self.layers.append(LSENetLayer(self.manifold, embed_dim + 1, hidden_features, self.num_max,
-                                           bias=True, use_att=False, dropout=dropout,
+                                           bias=True, use_att=True, dropout=dropout,
                                            nonlin=self.nonlin, temperature=self.temperature))
             self.num_max = int(self.num_max / decay_rate)
 

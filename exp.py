@@ -11,7 +11,7 @@ from dataset import load_data
 from utils.train_utils import EarlyStopping
 from logger import create_logger
 from manifold.poincare import Poincare
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
 
 
 class Exp:
@@ -43,7 +43,7 @@ class Exp:
                             embed_dim=self.configs.embed_dim, dropout=self.configs.dropout,
                             nonlin=self.configs.nonlin).to(device)
             optimizer = RiemannianAdam(model.parameters(), lr=self.configs.lr, weight_decay=self.configs.w_decay)
-            scheduler = ReduceLROnPlateau(optimizer)
+            scheduler = StepLR(optimizer, step_size=20, gamma=0.1)
             # pretrained = True
             # if pretrained:
             #     model.load_state_dict(torch.load(f'checkpoints/{self.configs.save_path}'))
@@ -53,10 +53,10 @@ class Exp:
             for epoch in range(1, self.configs.epochs + 1):
                 model.train()
                 loss = model.loss(data, device)
-                # scheduler.step(loss)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
+                scheduler.step()
 
                 logger.info(f"Epoch {epoch}: train_loss={loss.item()}")
                 early_stopping(loss, model, self.configs.save_path)

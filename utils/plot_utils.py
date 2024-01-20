@@ -47,7 +47,9 @@ def plot_leaves(tree, embeddings, labels, height):
         ax.add_artist(circle_k)
     n = embeddings.shape[0]
     colors = get_colors(labels, color_seed=1234)
-    ax.scatter(embeddings[:n, 0], embeddings[:n, 1], c=colors, s=50, alpha=0.6)
+    scatter = ax.scatter(embeddings[:n, 0], embeddings[:n, 1], c=colors, s=50, alpha=0.6)
+    # legend = ax.legend(*scatter.legend_elements(), loc="lower left", title="Classes")
+    # ax.add_artist(legend)
     ax.scatter(np.array([0]), np.array([0]), c='black')
     for u, v in tree.edges():
         x = tree.nodes[u]['coords'].numpy()
