@@ -12,9 +12,13 @@ import numpy as np
 
 
 def load_data(configs):
-    # dataset = KarateClub()
-    dataset = Football()
-    # dataset = Cora()
+    dataset = None
+    if configs.dataset == 'Cora':
+        dataset = Cora()
+    elif configs.dataset == 'KarateClub':
+        dataset = KarateClub()
+    elif configs.dataset == 'FootBall':
+        dataset = Football()
     data = {}
     data['feature'] = dataset.feature
     data['num_features'] = dataset.num_features

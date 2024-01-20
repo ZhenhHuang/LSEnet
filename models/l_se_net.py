@@ -14,7 +14,7 @@ from torch_geometric.utils import dropout_edge
 
 
 class LSENet(nn.Module):
-    def __init__(self, manifold, in_features, num_nodes, height=3, temperature=0.1,
+    def __init__(self, manifold, in_features, hidden_features, num_nodes, height=3, temperature=0.1,
                  embed_dim=64, dropout=0.5, nonlin='relu'):
         super(LSENet, self).__init__()
         self.manifold = manifold
@@ -23,13 +23,13 @@ class LSENet(nn.Module):
         self.num_nodes = num_nodes
         self.height = height
         self.scale = nn.Parameter(torch.tensor([0.999]), requires_grad=True)
-        self.embed_layer = GraphEncoder(self.manifold, 2, in_features + 1, 64, embed_dim + 1, use_att=False,
+        self.embed_layer = GraphEncoder(self.manifold, 2, in_features + 1, hidden_features, embed_dim + 1, use_att=False,
                                                      use_bias=True, dropout=dropout, nonlin=self.nonlin)
         self.layers = nn.ModuleList([])
         decay_rate = int(np.exp(np.log(num_nodes) / height))
         self.num_max = int(num_nodes / decay_rate)
         for i in range(height - 1):
-            self.layers.append(LSENetLayer(self.manifold, embed_dim + 1, embed_dim + 1, self.num_max,
+            self.layers.append(LSENetLayer(self.manifold, embed_dim + 1, hidden_features, self.num_max,
                                            bias=True, use_att=False, dropout=dropout,
                                            nonlin=self.nonlin, temperature=self.temperature))
             self.num_max = int(self.num_max / decay_rate)

@@ -137,15 +137,21 @@ class LorentzAtt(nn.Module):
 
 
 class LorentzAssignment(nn.Module):
-    def __init__(self, manifold, in_features, num_assign, dropout,
+    def __init__(self, manifold, in_features, hidden_features, num_assign, dropout,
                  bias=False, use_att=False, nonlin=None, temperature=0.2):
         super(LorentzAssignment, self).__init__()
         self.manifold = manifold
-        self.assign_linear = LorentzGraphConvolution(manifold, in_features, num_assign, use_att=use_att,
+        self.proj = nn.Sequential(LorentzLinear(manifold, in_features, hidden_features,
+                                                     bias=bias, dropout=dropout, nonlin=None),
+                                  LorentzLinear(manifold, hidden_features, hidden_features,
+                                                bias=bias, dropout=dropout, nonlin=nonlin)
+                                  )
+        self.assign_linear = LorentzGraphConvolution(manifold, hidden_features, num_assign, use_att=use_att,
                                                      use_bias=bias, dropout=dropout, nonlin=nonlin)
         self.temperature = temperature
 
     def forward(self, x, edge_index):
+        x = self.proj(x)
         ass = self.assign_linear(x, edge_index)
         att = 2 + 2 * self.manifold.inner(x[edge_index[0]], x[edge_index[1]], keepdim=True)   # (E, 1), -dist**2
         att = scatter_softmax(att / self.temperature, index=edge_index[0], dim=0)
@@ -156,18 +162,15 @@ class LorentzAssignment(nn.Module):
 
 
 class LSENetLayer(nn.Module):
-    def __init__(self, manifold, in_features, out_features, num_assign, dropout,
+    def __init__(self, manifold, in_features, hidden_features, num_assign, dropout,
                  bias=False, use_att=False, nonlin=None, temperature=0.2):
         super(LSENetLayer, self).__init__()
         self.manifold = manifold
-        # self.conv = LorentzGraphConvolution(manifold, in_features, out_features, use_att=use_att,
-        #                                              use_bias=bias, dropout=dropout, nonlin=None)
-        self.assignor = LorentzAssignment(manifold, in_features, num_assign, use_att=use_att, bias=bias,
+        self.assignor = LorentzAssignment(manifold, in_features, hidden_features, num_assign, use_att=use_att, bias=bias,
                                           dropout=dropout, nonlin=nonlin, temperature=temperature)
         self.temperature = temperature
 
     def forward(self, x, edge_index):
-        # x = self.conv(x, edge_index)
         ass = self.assignor(x, edge_index)
         support_t = ass.exp().t() @ x
         denorm = (-self.manifold.inner(None, support_t, keepdim=True))

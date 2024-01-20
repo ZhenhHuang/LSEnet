@@ -37,7 +37,8 @@ class Exp:
         best_cluster = {'acc': 0, 'nmi': 0, 'f1': 0, 'ari': 0}
         for exp_iter in range(self.configs.exp_iters):
             logger.info(f"\ntrain iters {exp_iter}")
-            model = HyperSE(in_features=data['num_features'], num_nodes=data['num_nodes'],
+            model = HyperSE(in_features=data['num_features'],
+                            hidden_features=self.configs.hidden_dim, num_nodes=data['num_nodes'],
                             height=self.configs.height, temperature=self.configs.temperature,
                             embed_dim=self.configs.embed_dim, dropout=self.configs.dropout,
                             nonlin=self.configs.nonlin).to(device)
@@ -52,7 +53,7 @@ class Exp:
             for epoch in range(1, self.configs.epochs + 1):
                 model.train()
                 loss = model.loss(data, device)
-                scheduler.step(loss)
+                # scheduler.step(loss)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -63,7 +64,7 @@ class Exp:
                     logger.info("Early stopping")
                     break
             #     if epoch % self.configs.eval_freq == 0:
-            #         logger.info("---------------Evaluation Start-----------------")
+            logger.info("---------------Evaluation Start-----------------")
             model.eval()
             embeddings = model(data, device).detach().cpu()
             tree = construct_tree(torch.tensor([i for i in range(data['num_nodes'])]).long(),

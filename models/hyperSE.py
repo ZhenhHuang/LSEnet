@@ -20,14 +20,14 @@ EPS = 1e-6
 
 
 class HyperSE(nn.Module):
-    def __init__(self, in_features, num_nodes, height=3, temperature=0.2,
+    def __init__(self, in_features, hidden_features, num_nodes, height=3, temperature=0.2,
                  embed_dim=2, dropout=0.5, nonlin='relu'):
         super(HyperSE, self).__init__()
         self.num_nodes = num_nodes
         self.height = height
         self.tau = temperature
         self.manifold = Lorentz()
-        self.encoder = LSENet(self.manifold, in_features, num_nodes, height, temperature, embed_dim, dropout, nonlin)
+        self.encoder = LSENet(self.manifold, in_features, hidden_features, num_nodes, height, temperature, embed_dim, dropout, nonlin)
 
     def forward(self, data, device=torch.device('cuda:0')):
         features = data['feature'].to(device)
