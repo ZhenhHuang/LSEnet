@@ -36,7 +36,7 @@ class HyperSE(nn.Module):
         self.disk_embeddings = {}
         for height, x in embeddings.items():
             x = self.manifold.to_poincare(x)
-            self.disk_embeddings[height] = x
+            self.disk_embeddings[height] = x.detach()
         ass_mat = {self.height: torch.eye(self.num_nodes).to(device)}
         for k in range(self.height - 1, 0, -1):
             ass_mat[k] = ass_mat[k + 1] @ clu_mat[k + 1]
@@ -75,7 +75,7 @@ class HyperSE(nn.Module):
             weight_sum = torch.einsum('en, e->n', ass_i * ass_j, weight)  # (N_k, )
             delta_vol = vol_dict[k] - weight_sum    # (N_k, )
             loss += torch.sum(delta_vol * log_vol_ratio_k)
-        loss = -1 / vol_G * loss + Poincare().dist0(self.manifold.to_poincare(embeddings[0]))
+        loss = -1 / vol_G * loss + 5 * Poincare().dist0(self.manifold.to_poincare(embeddings[0]))
 
         neg_edge_index = data['neg_edge_index'].to(device)
         edges = torch.concat([edge_index, neg_edge_index], dim=-1)

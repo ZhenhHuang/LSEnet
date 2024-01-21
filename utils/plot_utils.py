@@ -50,14 +50,18 @@ def plot_leaves(tree, embeddings, labels, height):
     scatter = ax.scatter(embeddings[:n, 0], embeddings[:n, 1], c=colors, s=50, alpha=0.6)
     # legend = ax.legend(*scatter.legend_elements(), loc="lower left", title="Classes")
     # ax.add_artist(legend)
-    ax.scatter(np.array([0]), np.array([0]), c='black')
+    # ax.scatter(np.array([0]), np.array([0]), c='black')
     for u, v in tree.edges():
         x = tree.nodes[u]['coords'].numpy()
         y = tree.nodes[v]['coords'].numpy()
         if tree.nodes[u]['is_leaf'] is False:
-            ax.scatter(x[0], x[1], c='red', s=50, marker='s')
+            c = 'black' if tree.nodes[u]['height'] == 0 else 'red'
+            m = '*' if tree.nodes[u]['height'] == 0 else 's'
+            ax.scatter(x[0], x[1], c=c, s=30, marker=m)
         if tree.nodes[v]['is_leaf'] is False:
-            ax.scatter(y[0], y[1], c='red', s=50, marker='s')
+            c = 'black' if tree.nodes[v]['height'] == 0 else 'red'
+            m = '*' if tree.nodes[u]['height'] == 0 else 's'
+            ax.scatter(y[0], y[1], c=c, s=30, marker=m)
         plot_geodesic(y, x, ax)
     ax.set_xlim(-1.05, 1.05)
     ax.set_ylim(-1.05, 1.05)

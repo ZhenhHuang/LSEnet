@@ -69,7 +69,7 @@ class Exp:
             embeddings = model(data, device).detach().cpu()
             tree = construct_tree(torch.tensor([i for i in range(data['num_nodes'])]).long(),
                                   model.manifold,
-                                  embeddings, model.ass_mat, height=self.configs.height,
+                                  embeddings, model.disk_embeddings, model.ass_mat, height=self.configs.height,
                                   num_nodes=embeddings.shape[0])
             tree_graph = to_networkx_tree(tree, Poincare())
             plot_leaves(tree_graph, embeddings.numpy(), data['labels'], height=self.configs.height)

@@ -27,6 +27,7 @@ class LSENet(nn.Module):
                                                      use_bias=True, dropout=dropout, nonlin=self.nonlin)
         self.layers = nn.ModuleList([])
         decay_rate = int(np.exp(np.log(num_nodes) / height))
+        decay_rate = 9
         self.num_max = int(num_nodes / decay_rate)
         for i in range(height - 1):
             self.layers.append(LSENetLayer(self.manifold, embed_dim + 1, hidden_features, self.num_max,

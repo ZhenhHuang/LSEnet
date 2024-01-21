@@ -143,8 +143,8 @@ class LorentzAssignment(nn.Module):
         self.manifold = manifold
         self.proj = nn.Sequential(LorentzLinear(manifold, in_features, hidden_features,
                                                      bias=bias, dropout=dropout, nonlin=None),
-                                  LorentzLinear(manifold, hidden_features, hidden_features,
-                                                bias=bias, dropout=dropout, nonlin=nonlin)
+                                  # LorentzLinear(manifold, hidden_features, hidden_features,
+                                  #               bias=bias, dropout=dropout, nonlin=nonlin)
                                   )
         self.assign_linear = LorentzGraphConvolution(manifold, hidden_features, num_assign, use_att=use_att,
                                                      use_bias=bias, dropout=dropout, nonlin=nonlin)
@@ -153,11 +153,10 @@ class LorentzAssignment(nn.Module):
     def forward(self, x, edge_index):
         x = self.proj(x)
         ass = self.assign_linear(x, edge_index)
-        att = 2 + 2 * self.manifold.inner(x[edge_index[0]], x[edge_index[1]], keepdim=True)   # (E, 1), -dist**2
-        att = scatter_softmax(att / self.temperature, index=edge_index[0], dim=0)
-        ass = index2adjacency(x.shape[0], edge_index, att) @ ass   # (N_k, N_{k-1})
+        # att = 2 + 2 * self.manifold.inner(x[edge_index[0]], x[edge_index[1]], keepdim=True)   # (E, 1), -dist**2
+        # att = scatter_softmax(att / self.temperature, index=edge_index[0], dim=0)
+        # ass = index2adjacency(x.shape[0], edge_index, att) @ ass   # (N_k, N_{k-1})
         logits = torch.log_softmax(ass, dim=-1)
-        # ass = gumbel_softmax(logits, hard=True, temperature=self.temperature)
         return logits
 
 
@@ -172,12 +171,14 @@ class LSENetLayer(nn.Module):
 
     def forward(self, x, edge_index):
         ass = self.assignor(x, edge_index)
+        ass_hard = gumbel_softmax(ass, hard=True, temperature=self.temperature)
+
         support_t = ass.exp().t() @ x
         denorm = (-self.manifold.inner(None, support_t, keepdim=True))
         denorm = denorm.abs().clamp_min(1e-8).sqrt()
         x_assigned = support_t / denorm
+
         adj = index2adjacency(x.shape[0], edge_index)
-        ass_hard = gumbel_softmax(ass, hard=True, temperature=self.temperature)
         adj = ass_hard.t() @ adj @ ass_hard
         edge_index_assigned = adjacency2index(adj)
         return x_assigned, edge_index_assigned, ass.exp()
