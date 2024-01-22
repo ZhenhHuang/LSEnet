@@ -11,6 +11,10 @@ def select_activation(activation):
         return F.elu
     elif activation == 'relu':
         return F.relu
+    elif activation == 'sigmoid':
+        return F.sigmoid
+    elif activation is None:
+        return None
     else:
         raise NotImplementedError('the non_linear_function is not implemented')
 

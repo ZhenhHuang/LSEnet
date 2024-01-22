@@ -47,6 +47,7 @@ def plot_leaves(tree, manifold, embeddings, labels, height):
         ax.add_artist(circle_k)
     n = embeddings.shape[0]
     colors = get_colors(labels, color_seed=1234)
+    embeddings = manifold.to_poincare(embeddings).numpy()
     scatter = ax.scatter(embeddings[:n, 0], embeddings[:n, 1], c=colors, s=50, alpha=0.6)
     # legend = ax.legend(*scatter.legend_elements(), loc="lower left", title="Classes")
     # ax.add_artist(legend)

@@ -38,8 +38,8 @@ class HyperSE(nn.Module):
         ass_mat = {self.height: torch.eye(self.num_nodes).to(device)}
         for k in range(self.height - 1, 0, -1):
             ass_mat[k] = ass_mat[k + 1] @ clu_mat[k + 1]
-        for k, v in ass_mat.items():
-            ass_mat[k] = gumbel_softmax(v.log(), temperature=self.tau, hard=True)
+        # for k, v in ass_mat.items():
+        #     ass_mat[k] = gumbel_softmax(v.log(), temperature=self.tau, hard=True)
         self.ass_mat = ass_mat
         return self.embeddings[self.height]
 
@@ -84,4 +84,4 @@ class HyperSE(nn.Module):
             delta_vol = vol_dict[k] - weight_sum    # (N_k, )
             se_loss += torch.sum(delta_vol * log_vol_ratio_k)
         se_loss = -1 / vol_G * se_loss
-        return se_loss + 5 * self.manifold.dist0(embeddings[0]) + loss
+        return se_loss + loss + self.manifold.dist0(embeddings[0])

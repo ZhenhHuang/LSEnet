@@ -36,7 +36,7 @@ def decoding_cluster_from_tree(manifold, tree: nx.Graph, num_clusters, num_nodes
             if len(sub_level_set) <= 1:
                 pos += 1
                 continue
-            sub_level_set = sorted(sub_level_set, key=lambda x: x[1])
+            sub_level_set = sorted(sub_level_set, reverse=False, key=lambda x: x[1])
             count += len(sub_level_set) - 1
             if count > num_clusters:
                 while count > num_clusters:
@@ -76,7 +76,7 @@ def merge_nodes_once(manifold, root_coords, tree, group_list, count):
     merged_item = (merged_node, merged_dist)
     del group_list[-2:]
     group_list.append(merged_item)
-    group_list = sorted(group_list, key=lambda x: x[1])
+    group_list = sorted(group_list, reverse=False, key=lambda x: x[1])
     count -= 1
     return group_list, count
 

@@ -65,7 +65,7 @@ class Exp:
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-                # scheduler.step()
+                scheduler.step()
 
                 logger.info(f"Epoch {epoch}: train_loss={loss.item()}")
                 early_stopping(loss, model, self.configs.save_path)
@@ -82,7 +82,7 @@ class Exp:
                                   model.embeddings, model.ass_mat, height=self.configs.height,
                                   num_nodes=embeddings.shape[0])
             tree_graph = to_networkx_tree(tree, manifold, height=self.configs.height)
-            plot_leaves(tree_graph, manifold, embeddings.numpy(), data['labels'], height=self.configs.height)
+            plot_leaves(tree_graph, manifold, embeddings, data['labels'], height=self.configs.height)
             plot_nx_graph(tree_graph, root=data['num_nodes'])
             predicts = decoding_cluster_from_tree(manifold, tree_graph,
                                                   data['num_classes'], data['num_nodes'],

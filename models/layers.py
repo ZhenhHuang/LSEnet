@@ -112,7 +112,7 @@ class LorentzAssignment(nn.Module):
         super(LorentzAssignment, self).__init__()
         self.manifold = manifold
         self.proj = nn.Sequential(LorentzLinear(manifold, in_features, hidden_features,
-                                                     bias=bias, dropout=dropout, nonlin=None),
+                                                     bias=bias, dropout=dropout, nonlin=nonlin),
                                   # LorentzLinear(manifold, hidden_features, hidden_features,
                                   #               bias=bias, dropout=dropout, nonlin=nonlin)
                                   )
@@ -151,4 +151,4 @@ class LSENetLayer(nn.Module):
         adj = index2adjacency(x.shape[0], edge_index)
         adj = ass_hard.t() @ adj @ ass_hard
         edge_index_assigned = adjacency2index(adj)
-        return x_assigned, edge_index_assigned, ass.exp()
+        return x_assigned, edge_index_assigned, ass_hard
