@@ -11,7 +11,7 @@ class Poincare(geoopt.PoincareBall):
     def from_lorentz(self, x, dim=-1):
         x = x.to(self.c.device)
         dn = x.size(dim) - 1
-        return x.narrow(dim, 1, dn) / (x.narrow(-dim, 0, 1) + torch.sqrt(self.c))
+        return x.narrow(dim, 1, dn) / (x.narrow(dim, 0, 1) + torch.sqrt(self.c))
 
     def to_lorentz(self, x, dim=-1, eps=1e-6):
         x = x.to(self.c.device)
@@ -22,12 +22,6 @@ class Poincare(geoopt.PoincareBall):
                 / (1.0 - x_norm_square + eps)
         )
         return res
-
-    def dist_cpu(
-        self, x: torch.Tensor, y: torch.Tensor, *, keepdim=False, dim=-1
-    ) -> torch.Tensor:
-        k = self.k.cpu()
-        return math.dist(x, y, k=k, keepdim=keepdim, dim=dim)
 
     def Frechet_mean(self, embeddings, weights=None, keepdim=False):
         z = self.to_lorentz(embeddings)

@@ -37,7 +37,7 @@ def plot_geodesic(x, y, ax):
     ax.plot(points[:, 0], points[:, 1], color='black', linewidth=0.25, alpha=0.8)
 
 
-def plot_leaves(tree, embeddings, labels, height):
+def plot_leaves(tree, manifold, embeddings, labels, height):
     fig = plt.figure(figsize=(15, 15))
     ax = fig.add_subplot(111)
     circle = plt.Circle((0, 0), 1.0, color='r', alpha=0.1)
@@ -52,8 +52,8 @@ def plot_leaves(tree, embeddings, labels, height):
     # ax.add_artist(legend)
     # ax.scatter(np.array([0]), np.array([0]), c='black')
     for u, v in tree.edges():
-        x = tree.nodes[u]['coords'].numpy()
-        y = tree.nodes[v]['coords'].numpy()
+        x = manifold.to_poincare(tree.nodes[u]['coords']).numpy()
+        y = manifold.to_poincare(tree.nodes[v]['coords']).numpy()
         if tree.nodes[u]['is_leaf'] is False:
             c = 'black' if tree.nodes[u]['height'] == 0 else 'red'
             m = '*' if tree.nodes[u]['height'] == 0 else 's'

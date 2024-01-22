@@ -4,7 +4,6 @@ import torch.nn.functional as F
 import torch.nn as nn
 from geoopt.manifolds.stereographic.math import mobius_matvec, project, expmap0, mobius_add, logmap0
 from geoopt.tensor import ManifoldParameter
-from geoopt.manifolds import PoincareBall
 from torch_scatter import scatter_sum, scatter_softmax
 from torch_geometric.utils import add_self_loops
 import math

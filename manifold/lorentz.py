@@ -15,7 +15,7 @@ class Lorentz(geoopt.Lorentz):
     def to_poincare(self, x, dim=-1):
         x = x.to(self.k.device)
         dn = x.size(dim) - 1
-        return x.narrow(dim, 1, dn) / (x.narrow(-dim, 0, 1) + torch.sqrt(self.k))
+        return x.narrow(dim, 1, dn) / (x.narrow(dim, 0, 1) + torch.sqrt(self.k))
 
     def from_poincare(self, x, dim=-1, eps=1e-6):
         x = x.to(self.k.device)
@@ -36,9 +36,3 @@ class Lorentz(geoopt.Lorentz):
         denorm = denorm.abs().clamp_min(1e-8).sqrt()
         z = z / denorm
         return z
-
-    def dist_cpu(
-        self, x: torch.Tensor, y: torch.Tensor, *, keepdim=False, dim=-1
-    ) -> torch.Tensor:
-        k = self.k.cpu()
-        return lmath.dist(x, y, k=k, keepdim=keepdim, dim=dim).to(x.device)

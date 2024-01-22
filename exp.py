@@ -76,14 +76,15 @@ class Exp:
             logger.info("---------------Evaluation Start-----------------")
             model.eval()
             embeddings = model(data, device).detach().cpu()
+            manifold = model.manifold.cpu()
             tree = construct_tree(torch.tensor([i for i in range(data['num_nodes'])]).long(),
-                                  model.manifold,
-                                  embeddings, model.disk_embeddings, model.ass_mat, height=self.configs.height,
+                                  manifold,
+                                  model.embeddings, model.ass_mat, height=self.configs.height,
                                   num_nodes=embeddings.shape[0])
-            tree_graph = to_networkx_tree(tree, Poincare())
-            plot_leaves(tree_graph, embeddings.numpy(), data['labels'], height=self.configs.height)
+            tree_graph = to_networkx_tree(tree, manifold, height=self.configs.height)
+            plot_leaves(tree_graph, manifold, embeddings.numpy(), data['labels'], height=self.configs.height)
             plot_nx_graph(tree_graph, root=data['num_nodes'])
-            predicts = decoding_cluster_from_tree(Poincare(), tree_graph,
+            predicts = decoding_cluster_from_tree(manifold, tree_graph,
                                                   data['num_classes'], data['num_nodes'],
                                                   height=self.configs.height)
             trues = data['labels']

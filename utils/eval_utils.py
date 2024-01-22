@@ -28,9 +28,11 @@ def decoding_cluster_from_tree(manifold, tree: nx.Graph, num_clusters, num_nodes
         h = h + 1   # search next level
         while pos < len(group_list):
             v1, d1 = group_list[pos]  # node to split
-            sub_level_set = [([v], dist_dict[h][v])
-                             for u, v in tree.edges(v1[0])
-                             if tree.nodes[v]['height'] == h]   # [ ([v], dist_v) ]
+            sub_level_set = []
+            for j in range(len(v1)):
+                for u, v in tree.edges(v1[j]):
+                    if tree.nodes[v]['height'] == h:
+                        sub_level_set.append(([v], dist_dict[h][v]))    # [ ([v], dist_v) ]
             if len(sub_level_set) <= 1:
                 pos += 1
                 continue
@@ -56,7 +58,8 @@ def decoding_cluster_from_tree(manifold, tree: nx.Graph, num_clusters, num_nodes
         u_list, _ = group_list[i]
         group = []
         for u in u_list:
-            group += tree.nodes[u]['children']
+            index = tree.nodes[u]['children'].tolist()
+            group += index
         cluster_dist.update({k: i for k in group})
     results = sorted(cluster_dist.items(), key=lambda x: x[0])
     results = np.array([x[1] for x in results])
@@ -64,6 +67,7 @@ def decoding_cluster_from_tree(manifold, tree: nx.Graph, num_clusters, num_nodes
 
 
 def merge_nodes_once(manifold, root_coords, tree, group_list, count):
+    # group_list should be ordered ascend
     v1, v2 = group_list[-1], group_list[-2]
     merged_node = v1[0] + v2[0]
     merged_coords = torch.stack([tree.nodes[v]['coords'] for v in merged_node], dim=0)

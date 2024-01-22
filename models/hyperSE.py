@@ -9,7 +9,6 @@ from torch_scatter import scatter_sum
 from utils.decode import construct_tree
 from models.layers import LorentzGraphConvolution, LorentzLinear
 from manifold.lorentz import Lorentz
-from manifold.poincare import Poincare
 from models.encoders import GraphEncoder
 import math
 from models.l_se_net import LSENet
@@ -33,17 +32,16 @@ class HyperSE(nn.Module):
         features = data['feature'].to(device)
         edge_index = data['edge_index'].to(device)
         embeddings, clu_mat = self.encoder(features, edge_index)
-        self.disk_embeddings = {}
+        self.embeddings = {}
         for height, x in embeddings.items():
-            x = self.manifold.to_poincare(x)
-            self.disk_embeddings[height] = x.detach()
+            self.embeddings[height] = x.detach()
         ass_mat = {self.height: torch.eye(self.num_nodes).to(device)}
         for k in range(self.height - 1, 0, -1):
             ass_mat[k] = ass_mat[k + 1] @ clu_mat[k + 1]
         for k, v in ass_mat.items():
             ass_mat[k] = gumbel_softmax(v.log(), temperature=self.tau, hard=True)
         self.ass_mat = ass_mat
-        return self.disk_embeddings[self.height]
+        return self.embeddings[self.height]
 
     def loss(self, data, device=torch.device('cuda:0'), pretrain=False):
         """_summary_
