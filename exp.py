@@ -44,9 +44,18 @@ class Exp:
                             nonlin=self.configs.nonlin).to(device)
             optimizer = RiemannianAdam(model.parameters(), lr=self.configs.lr, weight_decay=self.configs.w_decay)
             scheduler = StepLR(optimizer, step_size=20, gamma=0.1)
+
             # pretrained = True
             # if pretrained:
             #     model.load_state_dict(torch.load(f'checkpoints/{self.configs.save_path}'))
+            #     for epoch in range(1, 100):
+            #         model.train()
+            #         loss = model.loss(data, device, pretrain=True)
+            #         optimizer.zero_grad()
+            #         loss.backward()
+            #         optimizer.step()
+            #         logger.info(f"Epoch {epoch}: train_loss={loss.item()}")
+
             early_stopping = EarlyStopping(self.configs.patience)
             logger.info("--------------------------Training Start-------------------------")
             n_cluster_trials = self.configs.n_cluster_trials
@@ -56,7 +65,7 @@ class Exp:
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-                scheduler.step()
+                # scheduler.step()
 
                 logger.info(f"Epoch {epoch}: train_loss={loss.item()}")
                 early_stopping(loss, model, self.configs.save_path)

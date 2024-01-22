@@ -45,7 +45,7 @@ class HyperSE(nn.Module):
         self.ass_mat = ass_mat
         return self.disk_embeddings[self.height]
 
-    def loss(self, data, device=torch.device('cuda:0')):
+    def loss(self, data, device=torch.device('cuda:0'), pretrain=False):
         """_summary_
 
         Args:
@@ -59,7 +59,17 @@ class HyperSE(nn.Module):
 
         embeddings, clu_mat = self.encoder(features, edge_index)
 
-        loss = 0
+        neg_edge_index = data['neg_edge_index'].to(device)
+        edges = torch.concat([edge_index, neg_edge_index], dim=-1)
+        prob = self.manifold.dist(embeddings[self.height][edges[0]], embeddings[self.height][edges[1]])
+        prob = torch.sigmoid((2. - prob) / 1.)
+        label = torch.concat([torch.ones(edge_index.shape[-1]), torch.zeros(neg_edge_index.shape[-1])]).to(device)
+        loss = F.binary_cross_entropy(prob, label)
+
+        if pretrain:
+            return loss
+
+        se_loss = 0
         vol_G = weight.sum()
         ass_mat = {self.height: torch.eye(self.num_nodes).to(device)}
         vol_dict = {self.height: degrees, 0: vol_G.unsqueeze(0)}
@@ -74,13 +84,6 @@ class HyperSE(nn.Module):
             ass_j = ass_mat[k][edge_index[1]]
             weight_sum = torch.einsum('en, e->n', ass_i * ass_j, weight)  # (N_k, )
             delta_vol = vol_dict[k] - weight_sum    # (N_k, )
-            loss += torch.sum(delta_vol * log_vol_ratio_k)
-        loss = -1 / vol_G * loss + 5 * Poincare().dist0(self.manifold.to_poincare(embeddings[0]))
-
-        neg_edge_index = data['neg_edge_index'].to(device)
-        edges = torch.concat([edge_index, neg_edge_index], dim=-1)
-        prob = self.manifold.dist(embeddings[self.height][edges[0]], embeddings[self.height][edges[1]])
-        prob = torch.sigmoid((2. - prob) / 1.)
-        label = torch.concat([torch.ones(edge_index.shape[-1]), torch.zeros(neg_edge_index.shape[-1])]).to(device)
-        loss += F.binary_cross_entropy(prob, label)
-        return loss
+            se_loss += torch.sum(delta_vol * log_vol_ratio_k)
+        se_loss = -1 / vol_G * se_loss
+        return se_loss + 5 * self.manifold.dist0(embeddings[0]) + loss

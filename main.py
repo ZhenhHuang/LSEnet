@@ -7,7 +7,7 @@ from exp import Exp
 from logger import create_logger
 
 
-seed = 3047
+seed = 2024
 random.seed(seed)
 torch.manual_seed(seed)
 np.random.seed(seed)
@@ -25,11 +25,11 @@ parser.add_argument('--log_path', type=str, default="./results/v2302152230/cls_C
 
 parser.add_argument('--epochs', type=int, default=1000)
 parser.add_argument('--height', type=int, default=2)
-parser.add_argument('--lr', type=float, default=1e-2)
-parser.add_argument('--w_decay', type=float, default=0)
+parser.add_argument('--lr', type=float, default=1e-1)
+parser.add_argument('--w_decay', type=float, default=1e-4)
 parser.add_argument('--embed_dim', type=int, default=2)
 parser.add_argument('--hidden_dim', type=int, default=64)
-parser.add_argument('--dropout', type=float, default=0.0)
+parser.add_argument('--dropout', type=float, default=0.1)
 parser.add_argument('--nonlin', type=str, default='relu')
 parser.add_argument('--temperature', type=float, default=0.2)
 parser.add_argument('--n_cluster_trials', type=int, default=5)
