@@ -19,13 +19,18 @@ def decoding_cluster_from_tree(manifold, tree: nx.Graph, num_clusters, num_nodes
     sorted_dist_list = sorted(dist_dict[h].items(), reverse=False, key=lambda x: x[1])
     count = len(sorted_dist_list)
     group_list = [([u], dist) for u, dist in sorted_dist_list]  # [ ([u], dist_u) ]
-    pos = 0
+    while len(group_list) <= 1:
+        h = h + 1
+        sorted_dist_list = sorted(dist_dict[h].items(), reverse=False, key=lambda x: x[1])
+        count = len(sorted_dist_list)
+        group_list = [([u], dist) for u, dist in sorted_dist_list]
 
     while count > num_clusters:
         group_list, count = merge_nodes_once(manifold, root_coords, tree, group_list, count)
 
-    while count < num_clusters:
+    while count < num_clusters and h <= height:
         h = h + 1   # search next level
+        pos = 0
         while pos < len(group_list):
             v1, d1 = group_list[pos]  # node to split
             sub_level_set = []

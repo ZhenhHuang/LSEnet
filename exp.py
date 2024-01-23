@@ -43,7 +43,7 @@ class Exp:
                             embed_dim=self.configs.embed_dim, dropout=self.configs.dropout,
                             nonlin=self.configs.nonlin).to(device)
             optimizer = RiemannianAdam(model.parameters(), lr=self.configs.lr, weight_decay=self.configs.w_decay)
-            scheduler = StepLR(optimizer, step_size=20, gamma=0.1)
+            scheduler = StepLR(optimizer, step_size=200, gamma=0.8)
 
             # pretrained = True
             # if pretrained:
@@ -83,7 +83,7 @@ class Exp:
                                   num_nodes=embeddings.shape[0])
             tree_graph = to_networkx_tree(tree, manifold, height=self.configs.height)
             plot_leaves(tree_graph, manifold, embeddings, data['labels'], height=self.configs.height)
-            plot_nx_graph(tree_graph, root=data['num_nodes'])
+            # plot_nx_graph(tree_graph, root=data['num_nodes'])
             predicts = decoding_cluster_from_tree(manifold, tree_graph,
                                                   data['num_classes'], data['num_nodes'],
                                                   height=self.configs.height)
