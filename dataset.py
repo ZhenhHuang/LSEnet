@@ -5,6 +5,7 @@ from torch_geometric.data import Dataset, Data
 from torch_geometric.datasets import Planetoid
 from torch_geometric.utils import from_networkx, negative_sampling
 from torch_scatter import scatter_sum
+from utils.utils import index2adjacency
 import urllib.request
 import io
 import zipfile
@@ -29,6 +30,7 @@ def load_data(configs):
     data['labels'] = dataset.labels
     data['num_classes'] = dataset.num_classes
     data['neg_edge_index'] = dataset.neg_edge_index
+    data['adj'] = dataset.adj
     return data
 
 
@@ -44,6 +46,7 @@ class KarateClub:
         self.labels = data.y.tolist()
         self.num_classes = len(np.unique(self.labels))
         self.neg_edge_index = negative_sampling(data.edge_index)
+        self.adj = index2adjacency(self.num_nodes, self.edge_index, self.weight, is_sparse=True)
 
 
 class Football:
@@ -71,6 +74,7 @@ class Football:
         self.labels = data.value.tolist()
         self.num_classes = len(np.unique(self.labels))
         self.neg_edge_index = negative_sampling(data.edge_index)
+        self.adj = index2adjacency(self.num_nodes, self.edge_index, self.weight, is_sparse=True)
 
 
 class Cora:
@@ -86,3 +90,4 @@ class Cora:
         self.labels = data.y.tolist()
         self.num_classes = len(np.unique(self.labels))
         self.neg_edge_index = negative_sampling(data.edge_index)
+        self.adj = index2adjacency(self.num_nodes, self.edge_index, self.weight, is_sparse=True)

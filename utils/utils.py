@@ -63,6 +63,28 @@ def gumbel_softmax(logits, temperature=0.2, hard=False):
     return y_hard
 
 
+def gumbel_sigmoid(logits, tau: float = 1, hard: bool = False, threshold: float = 0.5):
+    """
+    https://github.com/AngelosNal/PyTorch-Gumbel-Sigmoid/blob/main/gumbel_sigmoid.py
+    """
+    gumbels = (
+        -torch.empty_like(logits, memory_format=torch.legacy_contiguous_format).exponential_().log()
+    )  # ~Gumbel(0, 1)
+    gumbels = (logits + gumbels) / tau  # ~Gumbel(logits, tau)
+    y_soft = gumbels.sigmoid()
+
+    if hard:
+        # Straight through.
+        indices = (y_soft > threshold).nonzero(as_tuple=True)
+        y_hard = torch.zeros_like(logits, memory_format=torch.legacy_contiguous_format)
+        y_hard[indices[0], indices[1]] = 1.0
+        ret = y_hard - y_soft.detach() + y_soft
+    else:
+        # Reparametrization trick.
+        ret = y_soft
+    return ret
+
+
 def graph_top_K(dense_adj, k):
     assert k < dense_adj.shape[-1]
     _, indices = dense_adj.topk(k=k, dim=-1)
@@ -94,10 +116,14 @@ def adjacency2index(adjacency, weight=False, topk=False, k=10):
         return edge_index
 
 
-def index2adjacency(N, edge_index, weight=None):
+def index2adjacency(N, edge_index, weight=None, is_sparse=True):
     adjacency = torch.zeros(N, N).to(edge_index.device)
+    m = edge_index.shape[1]
     if weight is None:
         adjacency[edge_index[0], edge_index[1]] = 1
     else:
         adjacency[edge_index[0], edge_index[1]] = weight.reshape(-1)
+    if is_sparse:
+        weight = weight if weight is not None else torch.ones(m).to(edge_index.device)
+        adjacency = torch.sparse_coo_tensor(indices=edge_index, values=weight, size=(N, N))
     return adjacency

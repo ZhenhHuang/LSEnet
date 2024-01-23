@@ -65,7 +65,7 @@ class Exp:
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-                scheduler.step()
+                # scheduler.step()
 
                 logger.info(f"Epoch {epoch}: train_loss={loss.item()}")
                 early_stopping(loss, model, self.configs.save_path)

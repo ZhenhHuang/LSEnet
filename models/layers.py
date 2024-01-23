@@ -7,7 +7,7 @@ from geoopt.tensor import ManifoldParameter
 from torch_scatter import scatter_sum, scatter_softmax
 from torch_geometric.utils import add_self_loops
 import math
-from utils.utils import gumbel_softmax, adjacency2index, index2adjacency, grad_round
+from utils.utils import gumbel_softmax, adjacency2index, index2adjacency, gumbel_sigmoid
 
 
 class LorentzGraphConvolution(nn.Module):
@@ -88,17 +88,33 @@ class LorentzAgg(nn.Module):
             self.bias = nn.Parameter(torch.zeros(()) + 20)
             self.scale = nn.Parameter(torch.zeros(()) + math.sqrt(in_features))
 
-    def forward(self, x, edge_index):
-        edge_index, _ = add_self_loops(edge_index, num_nodes=x.shape[0])
+    # def forward(self, x, edge_index):
+        # edge_index, _ = add_self_loops(edge_index, num_nodes=x.shape[0])
+        # if self.use_att:
+        #     query = self.query_linear(x)[edge_index[0]]
+        #     key = self.key_linear(x)[edge_index[1]]
+        #     att_adj = 2 + 2 * self.manifold.inner(query, key, dim=-1, keepdim=True)     # (E, 1)
+        #     att_adj = att_adj / self.scale + self.bias
+        #     att_adj = torch.sigmoid(att_adj)
+        #     support_t = scatter_sum(att_adj * x[edge_index[1]], index=edge_index[0], dim=0)
+        # else:
+        #     support_t = scatter_sum(x[edge_index[1]], index=edge_index[0], dim=0)
+        #
+        # denorm = (-self.manifold.inner(None, support_t, keepdim=True))
+        # denorm = denorm.abs().clamp_min(1e-8).sqrt()
+        # output = support_t / denorm
+        # return output
+    def forward(self, x, adj):
         if self.use_att:
-            query = self.query_linear(x)[edge_index[0]]
-            key = self.key_linear(x)[edge_index[1]]
-            att_adj = 2 + 2 * self.manifold.inner(query, key, dim=-1, keepdim=True)     # (E, 1)
+            query = self.query_linear(x)
+            key = self.key_linear(x)
+            att_adj = 2 + 2 * self.manifold.cinner(query, key)
             att_adj = att_adj / self.scale + self.bias
             att_adj = torch.sigmoid(att_adj)
-            support_t = scatter_sum(att_adj * x[edge_index[1]], index=edge_index[0], dim=0)
+            att_adj = torch.mul(adj.to_dense(), att_adj)
+            support_t = torch.matmul(att_adj, x)
         else:
-            support_t = scatter_sum(x[edge_index[1]], index=edge_index[0], dim=0)
+            support_t = torch.matmul(adj, x)
 
         denorm = (-self.manifold.inner(None, support_t, keepdim=True))
         denorm = denorm.abs().clamp_min(1e-8).sqrt()
@@ -111,21 +127,38 @@ class LorentzAssignment(nn.Module):
                  bias=False, use_att=False, nonlin=None, temperature=0.2):
         super(LorentzAssignment, self).__init__()
         self.manifold = manifold
+        self.num_assign = num_assign
         self.proj = nn.Sequential(LorentzLinear(manifold, in_features, hidden_features,
                                                      bias=bias, dropout=dropout, nonlin=nonlin),
                                   # LorentzLinear(manifold, hidden_features, hidden_features,
                                   #               bias=bias, dropout=dropout, nonlin=nonlin)
                                   )
-        self.assign_linear = LorentzGraphConvolution(manifold, hidden_features, num_assign, use_att=use_att,
+        self.assign_linear = LorentzGraphConvolution(manifold, hidden_features, num_assign + 1, use_att=use_att,
                                                      use_bias=bias, dropout=dropout, nonlin=nonlin)
         self.temperature = temperature
+        self.key_linear = LorentzLinear(manifold, in_features, in_features)
+        self.query_linear = LorentzLinear(manifold, in_features, in_features)
+        self.bias = nn.Parameter(torch.zeros(()) + 20)
+        self.scale = nn.Parameter(torch.zeros(()) + math.sqrt(hidden_features))
 
-    def forward(self, x, edge_index):
-        x = self.proj(x)
-        ass = self.assign_linear(x, edge_index)
-        att = 2 + 2 * self.manifold.inner(x[edge_index[0]], x[edge_index[1]], keepdim=True)   # (E, 1), -dist**2
-        att = scatter_softmax(att / self.temperature, index=edge_index[0], dim=0)
-        ass = index2adjacency(x.shape[0], edge_index, att) @ ass   # (N_k, N_{k-1})
+    # def forward(self, x, edge_index):
+    #     x = self.proj(x)
+    #     ass = self.assign_linear(x, edge_index)
+    #     att = 2 + 2 * self.manifold.inner(x[edge_index[0]], x[edge_index[1]], keepdim=True)   # (E, 1), -dist**2
+    #     att = scatter_softmax(att / self.temperature, index=edge_index[0], dim=0)
+    #     ass = index2adjacency(x.shape[0], edge_index, att) @ ass   # (N_k, N_{k-1})
+    #     logits = torch.log_softmax(ass, dim=-1)
+    #     return logits
+
+    def forward(self, x, adj):
+        ass = self.assign_linear(self.proj(x), adj).narrow(-1, 1, self.num_assign)
+        query = self.query_linear(x)
+        key = self.key_linear(x)
+        att_adj = 2 + 2 * self.manifold.cinner(query, key)
+        att_adj = att_adj / self.scale + self.bias
+        att = torch.sigmoid(att_adj)
+        att = torch.mul(adj.to_dense(), att)
+        ass = torch.matmul(att, ass)   # (N_k, N_{k-1})
         logits = torch.log_softmax(ass, dim=-1)
         return logits
 
@@ -139,16 +172,26 @@ class LSENetLayer(nn.Module):
                                           dropout=dropout, nonlin=nonlin, temperature=temperature)
         self.temperature = temperature
 
-    def forward(self, x, edge_index):
-        ass = self.assignor(x, edge_index)
-        ass_hard = gumbel_softmax(ass, hard=True, temperature=self.temperature)
+    # def forward(self, x, edge_index):
+    #     ass = self.assignor(x, edge_index)
+    #     ass_hard = gumbel_softmax(ass, hard=True, temperature=self.temperature)
+    #
+    #     support_t = ass.exp().t() @ x
+    #     denorm = (-self.manifold.inner(None, support_t, keepdim=True))
+    #     denorm = denorm.abs().clamp_min(1e-8).sqrt()
+    #     x_assigned = support_t / denorm
+    #
+    #     adj = index2adjacency(x.shape[0], edge_index)
+    #     adj = ass_hard.t() @ adj @ ass_hard
+    #     edge_index_assigned = adjacency2index(adj)
+    #     return x_assigned, edge_index_assigned, ass_hard
 
+    def forward(self, x, adj):
+        ass = self.assignor(x, adj)
         support_t = ass.exp().t() @ x
         denorm = (-self.manifold.inner(None, support_t, keepdim=True))
         denorm = denorm.abs().clamp_min(1e-8).sqrt()
         x_assigned = support_t / denorm
-
-        adj = index2adjacency(x.shape[0], edge_index)
-        adj = ass_hard.t() @ adj @ ass_hard
-        edge_index_assigned = adjacency2index(adj)
-        return x_assigned, edge_index_assigned, ass_hard
+        adj = ass.exp().t() @ adj @ ass.exp()
+        adj = gumbel_sigmoid(adj, tau=self.temperature)
+        return x_assigned, adj, ass.exp()

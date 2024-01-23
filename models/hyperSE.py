@@ -30,7 +30,8 @@ class HyperSE(nn.Module):
 
     def forward(self, data, device=torch.device('cuda:0')):
         features = data['feature'].to(device)
-        edge_index = data['edge_index'].to(device)
+        # edge_index = data['edge_index'].to(device)
+        edge_index = data['adj'].to(device)
         embeddings, clu_mat = self.encoder(features, edge_index)
         self.embeddings = {}
         for height, x in embeddings.items():
@@ -38,8 +39,8 @@ class HyperSE(nn.Module):
         ass_mat = {self.height: torch.eye(self.num_nodes).to(device)}
         for k in range(self.height - 1, 0, -1):
             ass_mat[k] = ass_mat[k + 1] @ clu_mat[k + 1]
-        # for k, v in ass_mat.items():
-        #     ass_mat[k] = gumbel_softmax(v.log(), temperature=self.tau, hard=True)
+        for k, v in ass_mat.items():
+            ass_mat[k] = gumbel_softmax(v.log(), temperature=self.tau, hard=True)
         self.ass_mat = ass_mat
         return self.embeddings[self.height]
 
@@ -52,10 +53,12 @@ class HyperSE(nn.Module):
         """
         weight = data['weight']
         edge_index = data['edge_index']
+        adj = data['adj'].to(device)
         degrees = data['degrees']
         features = data['feature']
 
-        embeddings, clu_mat = self.encoder(features, edge_index)
+        # embeddings, clu_mat = self.encoder(features, edge_index)
+        embeddings, clu_mat = self.encoder(features, adj)
 
         neg_edge_index = data['neg_edge_index'].to(device)
         edges = torch.concat([edge_index, neg_edge_index], dim=-1)
