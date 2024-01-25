@@ -159,7 +159,7 @@ class LorentzAssignment(nn.Module):
         att = torch.sigmoid(att_adj)
         att = torch.mul(adj.to_dense(), att)
         ass = torch.matmul(att, ass)   # (N_k, N_{k-1})
-        logits = torch.log_softmax(ass, dim=-1)
+        logits = torch.log_softmax(ass / self.temperature, dim=-1)
         return logits
 
 
@@ -193,5 +193,6 @@ class LSENetLayer(nn.Module):
         denorm = denorm.abs().clamp_min(1e-8).sqrt()
         x_assigned = support_t / denorm
         adj = ass.exp().t() @ adj @ ass.exp()
-        adj = gumbel_sigmoid(adj, tau=self.temperature)
+        adj = adj - torch.eye(adj.shape[0]).to(adj.device) * adj.diag()
+        # adj = gumbel_sigmoid(adj, tau=self.temperature)
         return x_assigned, adj, ass.exp()

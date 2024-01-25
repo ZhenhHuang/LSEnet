@@ -24,7 +24,7 @@ parser.add_argument('--version', type=str, default="run")
 parser.add_argument('--log_path', type=str, default="./results/v2302152230/cls_Cora.log")
 
 parser.add_argument('--epochs', type=int, default=1500)
-parser.add_argument('--height', type=int, default=3)
+parser.add_argument('--height', type=int, default=2)
 parser.add_argument('--lr', type=float, default=1e-2)
 parser.add_argument('--w_decay', type=float, default=0)
 parser.add_argument('--embed_dim', type=int, default=2)
