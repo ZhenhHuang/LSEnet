@@ -2,7 +2,7 @@ import torch
 import networkx as nx
 import torch_geometric.datasets
 from torch_geometric.data import Dataset, Data
-from torch_geometric.datasets import Planetoid
+from torch_geometric.datasets import Planetoid, Amazon
 from torch_geometric.utils import from_networkx, negative_sampling
 from torch_scatter import scatter_sum
 from utils.utils import index2adjacency
@@ -14,8 +14,8 @@ import numpy as np
 
 def load_data(configs):
     dataset = None
-    if configs.dataset == 'Cora':
-        dataset = Cora()
+    if configs.dataset in ['Cora', 'Citeseer', 'Pubmed', 'Computers', 'Photo']:
+        dataset = PygDataset(name=configs.dataset)
     elif configs.dataset == 'KarateClub':
         dataset = KarateClub()
     elif configs.dataset == 'FootBall':
@@ -77,9 +77,12 @@ class Football:
         self.adj = index2adjacency(self.num_nodes, self.edge_index, self.weight, is_sparse=True)
 
 
-class Cora:
-    def __init__(self):
-        dataset = Planetoid('D:\datasets\Graphs', 'cora')
+class PygDataset:
+    def __init__(self, name='Cora'):
+        if name in ['Cora', 'Citeseer', 'Pubmed']:
+            dataset = Planetoid('D:\datasets\Graphs', name)
+        else:
+            dataset = Amazon('D:\datasets\Graphs', name)
         data = dataset.data
         self.num_nodes = data.x.shape[0]
         self.feature = data.x

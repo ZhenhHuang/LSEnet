@@ -40,7 +40,11 @@ class HyperSE(nn.Module):
         for k in range(self.height - 1, 0, -1):
             ass_mat[k] = ass_mat[k + 1] @ clu_mat[k + 1]
         for k, v in ass_mat.items():
-            ass_mat[k] = gumbel_softmax(v.log(), temperature=self.tau, hard=True)
+            idx = v.max(1)[1]
+            t = torch.zeros_like(v)
+            t[torch.arange(t.shape[0]), idx] = 1.
+            # ass_mat[k] = gumbel_softmax(v.log(), temperature=self.tau, hard=True)
+            ass_mat[k] = t
         self.ass_mat = ass_mat
         return self.embeddings[self.height]
 
