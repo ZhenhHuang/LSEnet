@@ -15,9 +15,10 @@ np.random.seed(seed)
 parser = argparse.ArgumentParser(description='Hyperbolic Structural Entropy')
 
 # Experiment settings
-parser.add_argument('--dataset', type=str, default='Cora',
-                    choices=['Cora', 'Citeseer', 'KarateClub', 'FootBall', 'Computers', 'Photo'])
-parser.add_argument('--root_path', type=str, default='./dataset')
+parser.add_argument('--dataset', type=str, default='bat',
+                    choices=['Cora', 'Citeseer', 'KarateClub', 'FootBall', 'Computers',
+                             'Photo', 'eat', 'bat', 'uat'])
+parser.add_argument('--root_path', type=str, default='D:\datasets\Graphs')
 parser.add_argument('--batch_size', type=int, default=300)
 parser.add_argument('--eval_freq', type=int, default=10)
 parser.add_argument('--exp_iters', type=int, default=3)

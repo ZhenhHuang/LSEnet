@@ -5,7 +5,7 @@ from torch_geometric.data import Dataset, Data
 from torch_geometric.datasets import Planetoid, Amazon
 from torch_geometric.utils import from_networkx, negative_sampling
 from torch_scatter import scatter_sum
-from utils.utils import index2adjacency
+from utils.utils import index2adjacency, adjacency2index
 import urllib.request
 import io
 import zipfile
@@ -15,11 +15,13 @@ import numpy as np
 def load_data(configs):
     dataset = None
     if configs.dataset in ['Cora', 'Citeseer', 'Pubmed', 'Computers', 'Photo']:
-        dataset = PygDataset(name=configs.dataset)
+        dataset = PygDataset(root=configs.root_path, name=configs.dataset)
     elif configs.dataset == 'KarateClub':
         dataset = KarateClub()
     elif configs.dataset == 'FootBall':
         dataset = Football()
+    elif configs.dataset in ['eat', 'bat', 'uat']:
+        dataset = ATsDataset(root=configs.root_path, name=configs.dataset)
     data = {}
     data['feature'] = dataset.feature
     data['num_features'] = dataset.num_features
@@ -78,11 +80,11 @@ class Football:
 
 
 class PygDataset:
-    def __init__(self, name='Cora'):
+    def __init__(self, root, name='Cora'):
         if name in ['Cora', 'Citeseer', 'Pubmed']:
-            dataset = Planetoid('D:\datasets\Graphs', name)
+            dataset = Planetoid(root, name)
         else:
-            dataset = Amazon('D:\datasets\Graphs', name)
+            dataset = Amazon(root, name)
         data = dataset.data
         self.num_nodes = data.x.shape[0]
         self.feature = data.x
@@ -94,3 +96,22 @@ class PygDataset:
         self.num_classes = len(np.unique(self.labels))
         self.neg_edge_index = negative_sampling(data.edge_index)
         self.adj = index2adjacency(self.num_nodes, self.edge_index, self.weight, is_sparse=True)
+
+
+class ATsDataset:
+    def __init__(self, root, name='eat'):
+        adj = np.load(f'{root}/{name}/{name}_adj.npy')
+        feat = np.load(f'{root}/{name}/{name}_feat.npy')
+        label = np.load(f'{root}/{name}/{name}_label.npy')
+        self.num_nodes = feat.shape[0]
+        self.feature = torch.tensor(feat).float()
+        self.num_features = feat.shape[1]
+        self.edge_index = adjacency2index(torch.tensor(adj))
+        self.weight = torch.ones(self.edge_index.shape[1])
+        self.degrees = scatter_sum(self.weight, self.edge_index[0])
+        self.labels = list(label)
+        self.num_classes = len(np.unique(self.labels))
+        self.neg_edge_index = negative_sampling(self.edge_index)
+        self.adj = index2adjacency(self.num_nodes, self.edge_index, self.weight, is_sparse=True)
+
+
