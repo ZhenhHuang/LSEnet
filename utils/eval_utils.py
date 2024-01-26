@@ -34,10 +34,12 @@ def decoding_cluster_from_tree(manifold, tree: nx.Graph, num_clusters, num_nodes
         while pos < len(group_list):
             v1, d1 = group_list[pos]  # node to split
             sub_level_set = []
-            for j in range(len(v1)):
-                for u, v in tree.edges(v1[j]):
-                    if tree.nodes[v]['height'] == h:
-                        sub_level_set.append(([v], dist_dict[h][v]))    # [ ([v], dist_v) ]
+            v1_coord = tree.nodes[v1[0]]['coords']
+            for u, v in tree.edges(v1[0]):
+                if tree.nodes[v]['height'] == h:
+                    v_coords = tree.nodes[v]['coords']
+                    dist = manifold.dist(v_coords, v1_coord).cpu().numpy()
+                    sub_level_set.append(([v], dist))    # [ ([v], dist_v) ]
             if len(sub_level_set) <= 1:
                 pos += 1
                 continue
@@ -45,7 +47,7 @@ def decoding_cluster_from_tree(manifold, tree: nx.Graph, num_clusters, num_nodes
             count += len(sub_level_set) - 1
             if count > num_clusters:
                 while count > num_clusters:
-                    sub_level_set, count = merge_nodes_once(manifold, root_coords, tree, sub_level_set, count)
+                    sub_level_set, count = merge_nodes_once(manifold, v1_coord, tree, sub_level_set, count)
                 del group_list[pos]  # del the position node which will be split
                 group_list += sub_level_set    # Now count == num_clusters
                 break
@@ -59,7 +61,14 @@ def decoding_cluster_from_tree(manifold, tree: nx.Graph, num_clusters, num_nodes
                 pos += 1
 
     cluster_dist = {}
-    for i in range(num_clusters):
+    # for i in range(num_clusters):
+    #     u_list, _ = group_list[i]
+    #     group = []
+    #     for u in u_list:
+    #         index = tree.nodes[u]['children'].tolist()
+    #         group += index
+    #     cluster_dist.update({k: i for k in group})
+    for i in range(len(group_list)):
         u_list, _ = group_list[i]
         group = []
         for u in u_list:
@@ -138,8 +147,11 @@ class cluster_metrics:
             self.trues, new_predicts, average='micro')
         return acc, f1_macro, precision_macro, recall_macro, f1_micro, precision_micro, recall_micro
 
-    def evaluateFromLabel(self):
+    def evaluateFromLabel(self, use_acc=False):
         nmi = metrics.normalized_mutual_info_score(self.trues, self.predicts)
         adjscore = metrics.adjusted_rand_score(self.trues, self.predicts)
-        acc, f1_macro, precision_macro, recall_macro, f1_micro, precision_micro, recall_micro = self.clusterAcc()
-        return acc, nmi, f1_macro, adjscore
+        if use_acc:
+            acc, f1_macro, precision_macro, recall_macro, f1_micro, precision_micro, recall_micro = self.clusterAcc()
+            return acc, nmi, f1_macro, adjscore
+        else:
+            return 0, nmi, 0, adjscore

@@ -12,6 +12,7 @@ from manifold.lorentz import Lorentz
 from models.encoders import GraphEncoder
 import math
 from models.l_se_net import LSENet
+from torch_geometric.utils import negative_sampling
 
 
 MIN_NORM = 1e-15
@@ -64,16 +65,6 @@ class HyperSE(nn.Module):
         # embeddings, clu_mat = self.encoder(features, edge_index)
         embeddings, clu_mat = self.encoder(features, adj)
 
-        neg_edge_index = data['neg_edge_index'].to(device)
-        edges = torch.concat([edge_index, neg_edge_index], dim=-1)
-        prob = self.manifold.dist(embeddings[self.height][edges[0]], embeddings[self.height][edges[1]])
-        prob = torch.sigmoid((2. - prob) / 1.)
-        label = torch.concat([torch.ones(edge_index.shape[-1]), torch.zeros(neg_edge_index.shape[-1])]).to(device)
-        loss = F.binary_cross_entropy(prob, label)
-
-        if pretrain:
-            return loss
-
         se_loss = 0
         vol_G = weight.sum()
         ass_mat = {self.height: torch.eye(self.num_nodes).to(device)}
@@ -81,6 +72,27 @@ class HyperSE(nn.Module):
         for k in range(self.height - 1, 0, -1):
             ass_mat[k] = ass_mat[k + 1] @ clu_mat[k + 1]
             vol_dict[k] = torch.einsum('ij, i->j', ass_mat[k], degrees)
+
+        neg_edge_index = data['neg_edge_index'].to(device)
+        edges = torch.concat([edge_index, neg_edge_index], dim=-1)
+        prob = self.manifold.dist(embeddings[self.height][edges[0]], embeddings[self.height][edges[1]])
+        prob = torch.sigmoid((2. - prob) / 1.)
+        label = torch.concat([torch.ones(edge_index.shape[-1]), torch.zeros(neg_edge_index.shape[-1])]).to(device)
+        lp_loss = F.binary_cross_entropy(prob, label)
+
+        as_loss = 0
+        # for k in range(1, self.height):
+        #     e1 = embeddings[k + 1]  # N_k+1
+        #     e2 = embeddings[k]  # N_k
+        #     index = torch.stack([torch.arange(e1.shape[0]).to(device), clu_mat[k + 1].argmax(-1)])
+        #     prob = self.manifold.dist(e1[index[0]], e2[index[1]])
+        #     prob = torch.sigmoid((2. - prob) / 1.)
+        #     label = torch.ones(index.shape[-1]).to(device)
+        #     as_loss += F.binary_cross_entropy(prob, label)
+        # as_loss = as_loss / (self.height - 1)
+
+        if pretrain:
+            return as_loss + self.manifold.dist0(embeddings[0]) + lp_loss
 
         for k in range(1, self.height + 1):
             vol_parent = torch.einsum('ij, j->i', clu_mat[k], vol_dict[k - 1])  # (N_k, )
@@ -91,4 +103,4 @@ class HyperSE(nn.Module):
             delta_vol = vol_dict[k] - weight_sum    # (N_k, )
             se_loss += torch.sum(delta_vol * log_vol_ratio_k)
         se_loss = -1 / vol_G * se_loss
-        return se_loss + loss + self.manifold.dist0(embeddings[0])
+        return se_loss + as_loss + self.manifold.dist0(embeddings[0]) + lp_loss

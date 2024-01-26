@@ -35,6 +35,8 @@ class Exp:
 
         best_cluster_result = {}
         best_cluster = {'acc': 0, 'nmi': 0, 'f1': 0, 'ari': 0}
+        total_nmi = []
+        total_ari = []
         for exp_iter in range(self.configs.exp_iters):
             logger.info(f"\ntrain iters {exp_iter}")
             model = HyperSE(in_features=data['num_features'],
@@ -45,16 +47,17 @@ class Exp:
             optimizer = RiemannianAdam(model.parameters(), lr=self.configs.lr, weight_decay=self.configs.w_decay)
             scheduler = StepLR(optimizer, step_size=200, gamma=0.8)
 
-            # pretrained = True
-            # if pretrained:
-            #     model.load_state_dict(torch.load(f'checkpoints/{self.configs.save_path}'))
-            #     for epoch in range(1, 100):
-            #         model.train()
-            #         loss = model.loss(data, device, pretrain=True)
-            #         optimizer.zero_grad()
-            #         loss.backward()
-            #         optimizer.step()
-            #         logger.info(f"Epoch {epoch}: train_loss={loss.item()}")
+            pretrained = True
+            if pretrained:
+                # model.load_state_dict(torch.load(f'checkpoints/{self.configs.save_path}'))
+                optimizer_pre = RiemannianAdam(model.parameters(), lr=self.configs.lr_pre, weight_decay=self.configs.w_decay)
+                for epoch in range(1, 200):
+                    model.train()
+                    loss = model.loss(data, device, pretrain=True)
+                    optimizer_pre.zero_grad()
+                    loss.backward()
+                    optimizer_pre.step()
+                    logger.info(f"Epoch {epoch}: train_loss={loss.item()}")
 
             early_stopping = EarlyStopping(self.configs.patience)
             logger.info("--------------------------Training Start-------------------------")
@@ -82,7 +85,8 @@ class Exp:
                                   model.embeddings, model.ass_mat, height=self.configs.height,
                                   num_nodes=embeddings.shape[0])
             tree_graph = to_networkx_tree(tree, manifold, height=self.configs.height)
-            plot_leaves(tree_graph, manifold, embeddings, data['labels'], height=self.configs.height)
+            plot_leaves(tree_graph, manifold, embeddings, data['labels'], height=self.configs.height,
+                        save_path=f"./results/{self.configs.dataset}_hyp_h{self.configs.height}_{exp_iter}.pdf")
             # plot_nx_graph(tree_graph, root=data['num_nodes'])
             predicts = decoding_cluster_from_tree(manifold, tree_graph,
                                                   data['num_classes'], data['num_nodes'],
@@ -99,6 +103,8 @@ class Exp:
                 ari.append(ari_)
             acc, nmi, f1, ari = np.mean(acc), np.mean(
                 nmi), np.mean(f1), np.mean(ari)
+            total_nmi.append(nmi)
+            total_ari.append(ari)
             if acc > best_cluster['acc']:
                 best_cluster['acc'] = acc
                 best_cluster_result['acc'] = [acc, nmi, f1, ari]
@@ -120,3 +126,5 @@ class Exp:
             acc, nmi, f1, ari = result
             logger.info(
                 f"Best Results according to {k}: ACC: {acc}, NMI: {nmi}, F1: {f1}, ARI: {ari} \n")
+        logger.info(f"NMI: {np.mean(total_nmi)}+-{np.std(total_nmi)}, "
+                    f"ARI: {np.mean(total_ari)}+-{np.std(total_ari)}")

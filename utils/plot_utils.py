@@ -37,10 +37,10 @@ def plot_geodesic(x, y, ax):
     ax.plot(points[:, 0], points[:, 1], color='black', linewidth=0.25, alpha=0.8)
 
 
-def plot_leaves(tree, manifold, embeddings, labels, height):
+def plot_leaves(tree, manifold, embeddings, labels, height, save_path=None):
     fig = plt.figure(figsize=(15, 15))
     ax = fig.add_subplot(111)
-    circle = plt.Circle((0, 0), 1.0, color='r', alpha=0.1)
+    circle = plt.Circle((0, 0), 1.0, color='y', alpha=0.1)
     ax.add_artist(circle)
     for k in range(1, height + 1):
         circle_k = plt.Circle((0, 0), k / (height + 1), color='b', alpha=0.05)
@@ -67,6 +67,7 @@ def plot_leaves(tree, manifold, embeddings, labels, height):
     ax.set_xlim(-1.05, 1.05)
     ax.set_ylim(-1.05, 1.05)
     ax.axis("off")
+    plt.savefig(save_path)
     plt.show()
     return ax
 
