@@ -40,7 +40,9 @@ class Exp:
         for exp_iter in range(self.configs.exp_iters):
             logger.info(f"\ntrain iters {exp_iter}")
             model = HyperSE(in_features=data['num_features'],
-                            hidden_features=self.configs.hidden_dim, num_nodes=data['num_nodes'],
+                            hidden_features=self.configs.hidden_dim,
+                            hidden_dim_enc=self.configs.hidden_dim_enc,
+                            num_nodes=data['num_nodes'],
                             height=self.configs.height, temperature=self.configs.temperature,
                             embed_dim=self.configs.embed_dim, dropout=self.configs.dropout,
                             nonlin=self.configs.nonlin).to(device)

@@ -14,7 +14,7 @@ from torch_geometric.utils import dropout_edge
 
 
 class LSENet(nn.Module):
-    def __init__(self, manifold, in_features, hidden_features, num_nodes, height=3, temperature=0.1,
+    def __init__(self, manifold, in_features, hidden_dim_enc, hidden_features, num_nodes, height=3, temperature=0.1,
                  embed_dim=64, dropout=0.5, nonlin='relu'):
         super(LSENet, self).__init__()
         self.manifold = manifold
@@ -23,7 +23,7 @@ class LSENet(nn.Module):
         self.num_nodes = num_nodes
         self.height = height
         self.scale = nn.Parameter(torch.tensor([0.999]), requires_grad=True)
-        self.embed_layer = GraphEncoder(self.manifold, 2, in_features + 1, hidden_features, embed_dim + 1, use_att=False,
+        self.embed_layer = GraphEncoder(self.manifold, 2, in_features + 1, hidden_dim_enc, embed_dim + 1, use_att=False,
                                                      use_bias=True, dropout=dropout, nonlin=self.nonlin)
         self.layers = nn.ModuleList([])
         decay_rate = int(np.exp(np.log(num_nodes) / height))
