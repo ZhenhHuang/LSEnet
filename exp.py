@@ -88,8 +88,9 @@ class Exp:
                                   num_nodes=embeddings.shape[0])
             tree_graph = to_networkx_tree(tree, manifold, height=self.configs.height)
             plot_leaves(tree_graph, manifold, embeddings, data['labels'], height=self.configs.height,
-                        save_path=f"./results/{self.configs.dataset}_hyp_h{self.configs.height}_{exp_iter}.pdf")
-            # plot_nx_graph(tree_graph, root=data['num_nodes'])
+                        save_path=f"./results/{self.configs.dataset}/{self.configs.dataset}_hyp_h{self.configs.height}_{exp_iter}.pdf")
+            plot_nx_graph(tree_graph, root=data['num_nodes'],
+                          save_path=f"./results/{self.configs.dataset}/{self.configs.dataset}_hyp_h{self.configs.height}_{exp_iter}_nx.pdf")
             predicts = decoding_cluster_from_tree(manifold, tree_graph,
                                                   data['num_classes'], data['num_nodes'],
                                                   height=self.configs.height)

@@ -92,7 +92,7 @@ class HyperSE(nn.Module):
         # as_loss = as_loss / (self.height - 1)
 
         if pretrain:
-            return as_loss + lp_loss
+            return as_loss + lp_loss + self.manifold.dist0(embeddings[0])
 
         for k in range(1, self.height + 1):
             vol_parent = torch.einsum('ij, j->i', clu_mat[k], vol_dict[k - 1])  # (N_k, )

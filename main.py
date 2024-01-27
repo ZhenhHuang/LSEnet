@@ -28,7 +28,7 @@ parser.add_argument('--log_path', type=str, default="./results/v2302152230/cls_C
 parser.add_argument('--epochs', type=int, default=1500)
 parser.add_argument('--height', type=int, default=2)
 parser.add_argument('--lr_pre', type=float, default=1e-2)
-parser.add_argument('--lr', type=float, default=1e-2)
+parser.add_argument('--lr', type=float, default=1e-3)
 parser.add_argument('--w_decay', type=float, default=0)
 parser.add_argument('--embed_dim', type=int, default=2)
 parser.add_argument('--hidden_dim_enc', type=int, default=32)
@@ -51,6 +51,8 @@ log_path = f"./results/{configs.version}/{configs.dataset}.log"
 configs.log_path = log_path
 if not os.path.exists(f"./results"):
     os.mkdir("./results")
+if not os.path.exists(f"./results/{configs.dataset}"):
+    os.mkdir(f"./results/{configs.dataset}")
 if not os.path.exists(f"./results/{configs.version}"):
     os.mkdir(f"./results/{configs.version}")
 print(f"Log path: {configs.log_path}")

@@ -34,7 +34,7 @@ def geodesic_fn(x, y, nb_points=100):
 def plot_geodesic(x, y, ax):
     """Plots geodesic between x and y."""
     points = geodesic_fn(x, y)
-    ax.plot(points[:, 0], points[:, 1], color='black', linewidth=0.25, alpha=0.8)
+    ax.plot(points[:, 0], points[:, 1], color='black', linewidth=0.5, alpha=0.8)
 
 
 def plot_leaves(tree, manifold, embeddings, labels, height, save_path=None):
@@ -48,7 +48,7 @@ def plot_leaves(tree, manifold, embeddings, labels, height, save_path=None):
     n = embeddings.shape[0]
     colors = get_colors(labels, color_seed=1234)
     embeddings = manifold.to_poincare(embeddings).numpy()
-    scatter = ax.scatter(embeddings[:n, 0], embeddings[:n, 1], c=colors, s=50, alpha=0.6)
+    scatter = ax.scatter(embeddings[:n, 0], embeddings[:n, 1], c=colors, s=100, alpha=0.6)
     # legend = ax.legend(*scatter.legend_elements(), loc="lower left", title="Classes")
     # ax.add_artist(legend)
     # ax.scatter(np.array([0]), np.array([0]), c='black')
@@ -84,9 +84,10 @@ def get_colors(y, color_seed=1234):
     return [colors[k] for k in y]
 
 
-def plot_nx_graph(G: nx.Graph, root):
+def plot_nx_graph(G: nx.Graph, root, save_path=None):
     fig = plt.figure(figsize=(15, 15))
     ax = fig.add_subplot(111)
-    pos = graphviz_layout(G, 'dot')
+    pos = graphviz_layout(G, 'twopi')
     nx.draw(G, pos, ax=ax, with_labels=True)
+    plt.savefig(save_path)
     plt.show()
