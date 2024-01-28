@@ -45,7 +45,8 @@ class Exp:
                             num_nodes=data['num_nodes'],
                             height=self.configs.height, temperature=self.configs.temperature,
                             embed_dim=self.configs.embed_dim, dropout=self.configs.dropout,
-                            nonlin=self.configs.nonlin).to(device)
+                            nonlin=self.configs.nonlin,
+                            decay_rate=self.configs.decay_rate).to(device)
             optimizer = RiemannianAdam(model.parameters(), lr=self.configs.lr, weight_decay=self.configs.w_decay)
             scheduler = StepLR(optimizer, step_size=200, gamma=0.8)
 
@@ -87,14 +88,20 @@ class Exp:
                                   model.embeddings, model.ass_mat, height=self.configs.height,
                                   num_nodes=embeddings.shape[0])
             tree_graph = to_networkx_tree(tree, manifold, height=self.configs.height)
-            plot_leaves(tree_graph, manifold, embeddings, data['labels'], height=self.configs.height,
-                        save_path=f"./results/{self.configs.dataset}/{self.configs.dataset}_hyp_h{self.configs.height}_{exp_iter}.pdf")
-            plot_nx_graph(tree_graph, root=data['num_nodes'],
-                          save_path=f"./results/{self.configs.dataset}/{self.configs.dataset}_hyp_h{self.configs.height}_{exp_iter}_nx.pdf")
+            _, color_dict = plot_leaves(tree_graph, manifold, embeddings, data['labels'], height=self.configs.height,
+                        save_path=f"./results/{self.configs.dataset}/{self.configs.dataset}_hyp_h{self.configs.height}_{exp_iter}_true.pdf")
+            # plot_nx_graph(tree_graph, root=data['num_nodes'],
+            #               save_path=f"./results/{self.configs.dataset}/{self.configs.dataset}_hyp_h{self.configs.height}_{exp_iter}_nx.pdf")
             predicts = decoding_cluster_from_tree(manifold, tree_graph,
                                                   data['num_classes'], data['num_nodes'],
                                                   height=self.configs.height)
             trues = data['labels']
+            metrics = cluster_metrics(trues, predicts)
+            metrics.clusterAcc()
+            new_pred = metrics.new_predicts
+            plot_leaves(tree_graph, manifold, embeddings, new_pred, height=self.configs.height,
+                                        save_path=f"./results/{self.configs.dataset}/{self.configs.dataset}_hyp_h{self.configs.height}_{exp_iter}_pred.pdf",
+                        colors_dict=color_dict)
 
             acc, nmi, f1, ari = [], [], [], []
             for step in range(n_cluster_trials):

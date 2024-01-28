@@ -15,7 +15,7 @@ np.random.seed(seed)
 parser = argparse.ArgumentParser(description='Hyperbolic Structural Entropy')
 
 # Experiment settings
-parser.add_argument('--dataset', type=str, default='bat',
+parser.add_argument('--dataset', type=str, default='KarateClub',
                     choices=['Cora', 'Citeseer', 'KarateClub', 'FootBall', 'Computers',
                              'Photo', 'eat', 'bat', 'uat'])
 parser.add_argument('--root_path', type=str, default='D:\datasets\Graphs')
@@ -28,8 +28,9 @@ parser.add_argument('--log_path', type=str, default="./results/v2302152230/cls_C
 parser.add_argument('--epochs', type=int, default=1500)
 parser.add_argument('--height', type=int, default=2)
 parser.add_argument('--lr_pre', type=float, default=1e-2)
-parser.add_argument('--lr', type=float, default=1e-3)
+parser.add_argument('--lr', type=float, default=1e-2)
 parser.add_argument('--w_decay', type=float, default=0)
+parser.add_argument('--decay_rate', type=float, default=None)
 parser.add_argument('--embed_dim', type=int, default=2)
 parser.add_argument('--hidden_dim_enc', type=int, default=32)
 parser.add_argument('--hidden_dim', type=int, default=32)

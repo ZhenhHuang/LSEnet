@@ -37,7 +37,7 @@ def plot_geodesic(x, y, ax):
     ax.plot(points[:, 0], points[:, 1], color='black', linewidth=0.5, alpha=0.8)
 
 
-def plot_leaves(tree, manifold, embeddings, labels, height, save_path=None):
+def plot_leaves(tree, manifold, embeddings, labels, height, save_path=None, colors_dict=None):
     fig = plt.figure(figsize=(15, 15))
     ax = fig.add_subplot(111)
     circle = plt.Circle((0, 0), 1.0, color='y', alpha=0.1)
@@ -46,7 +46,8 @@ def plot_leaves(tree, manifold, embeddings, labels, height, save_path=None):
         circle_k = plt.Circle((0, 0), k / (height + 1), color='b', alpha=0.05)
         ax.add_artist(circle_k)
     n = embeddings.shape[0]
-    colors = get_colors(labels, color_seed=1234)
+    colors_dict = get_colors(labels, color_seed=1234) if colors_dict is None else colors_dict
+    colors = [colors_dict[k] for k in labels]
     embeddings = manifold.to_poincare(embeddings).numpy()
     scatter = ax.scatter(embeddings[:n, 0], embeddings[:n, 1], c=colors, s=100, alpha=0.6)
     # legend = ax.legend(*scatter.legend_elements(), loc="lower left", title="Classes")
@@ -67,9 +68,9 @@ def plot_leaves(tree, manifold, embeddings, labels, height, save_path=None):
     ax.set_xlim(-1.05, 1.05)
     ax.set_ylim(-1.05, 1.05)
     ax.axis("off")
-    plt.savefig(save_path)
+    plt.savefig(save_path, transparent=True, bbox_inches='tight', dpi=500)
     plt.show()
-    return ax
+    return ax, colors_dict
 
 
 def get_colors(y, color_seed=1234):
@@ -81,7 +82,7 @@ def get_colors(y, color_seed=1234):
         b = np.random.random()
         g = np.random.random()
         colors[k] = (r, g, b)
-    return [colors[k] for k in y]
+    return colors
 
 
 def plot_nx_graph(G: nx.Graph, root, save_path=None):
