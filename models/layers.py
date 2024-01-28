@@ -136,8 +136,8 @@ class LorentzAssignment(nn.Module):
         self.assign_linear = LorentzGraphConvolution(manifold, hidden_features, num_assign + 1, use_att=use_att,
                                                      use_bias=bias, dropout=dropout, nonlin=nonlin)
         self.temperature = temperature
-        self.key_linear = LorentzLinear(manifold, in_features, hidden_features)
-        self.query_linear = LorentzLinear(manifold, in_features, hidden_features)
+        self.key_linear = LorentzLinear(manifold, in_features, in_features)
+        self.query_linear = LorentzLinear(manifold, in_features, in_features)
         self.bias = nn.Parameter(torch.zeros(()) + 20)
         self.scale = nn.Parameter(torch.zeros(()) + math.sqrt(hidden_features))
 

@@ -2,7 +2,7 @@ import torch
 import networkx as nx
 import torch_geometric.datasets
 from torch_geometric.data import Dataset, Data
-from torch_geometric.datasets import Planetoid, Amazon
+from torch_geometric.datasets import Planetoid, Amazon, StochasticBlockModelDataset
 from torch_geometric.utils import from_networkx, negative_sampling
 from torch_scatter import scatter_sum
 from utils.utils import index2adjacency, adjacency2index
@@ -22,6 +22,8 @@ def load_data(configs):
         dataset = Football()
     elif configs.dataset in ['eat', 'bat', 'uat']:
         dataset = ATsDataset(root=configs.root_path, name=configs.dataset)
+    elif configs.dataset == 'SBM':
+        dataset = SBMDataset(root=configs.root_path)
     data = {}
     data['feature'] = dataset.feature
     data['num_features'] = dataset.num_features
@@ -112,6 +114,34 @@ class ATsDataset:
         self.labels = list(label)
         self.num_classes = len(np.unique(self.labels))
         self.neg_edge_index = negative_sampling(self.edge_index)
+        self.adj = index2adjacency(self.num_nodes, self.edge_index, self.weight, is_sparse=True)
+
+
+class SBMDataset:
+    def __init__(self, root, num_classes=5, num_nodes=200, p_in=0.6, p_out=0.03):
+        num_classes = num_classes
+        p = torch.zeros(num_classes, num_classes)
+        for i in range(num_classes):
+            for j in range(num_classes):
+                if i == j:
+                    p[i, j] = p_in
+                else:
+                    p[i, j] = p_out
+
+        # 生成 SBM 数据集
+        data = StochasticBlockModelDataset(root,
+                                              [num_nodes / num_classes] * num_classes,
+                                              p, num_nodes=num_nodes)[0]
+        data.x = torch.eye(data.num_nodes)
+        self.num_nodes = data.x.shape[0]
+        self.feature = data.x
+        self.num_features = data.x.shape[1]
+        self.edge_index = data.edge_index
+        self.weight = torch.ones(self.edge_index.shape[1])
+        self.degrees = scatter_sum(self.weight, self.edge_index[0])
+        self.labels = data.y.tolist()
+        self.num_classes = len(np.unique(self.labels))
+        self.neg_edge_index = negative_sampling(data.edge_index)
         self.adj = index2adjacency(self.num_nodes, self.edge_index, self.weight, is_sparse=True)
 
 

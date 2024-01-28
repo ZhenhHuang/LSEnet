@@ -96,17 +96,17 @@ class Exp:
                                                   data['num_classes'], data['num_nodes'],
                                                   height=self.configs.height)
             trues = data['labels']
-            metrics = cluster_metrics(trues, predicts)
-            metrics.clusterAcc()
-            new_pred = metrics.new_predicts
-            plot_leaves(tree_graph, manifold, embeddings, new_pred, height=self.configs.height,
-                                        save_path=f"./results/{self.configs.dataset}/{self.configs.dataset}_hyp_h{self.configs.height}_{exp_iter}_pred.pdf",
-                        colors_dict=color_dict)
+            # metrics = cluster_metrics(trues, predicts)
+            # metrics.clusterAcc()
+            # new_pred = metrics.new_predicts
+            # plot_leaves(tree_graph, manifold, embeddings, new_pred, height=self.configs.height,
+            #                             save_path=f"./results/{self.configs.dataset}/{self.configs.dataset}_hyp_h{self.configs.height}_{exp_iter}_pred.pdf",
+            #             colors_dict=color_dict)
 
             acc, nmi, f1, ari = [], [], [], []
             for step in range(n_cluster_trials):
                 metrics = cluster_metrics(trues, predicts)
-                acc_, nmi_, f1_, ari_ = metrics.evaluateFromLabel()
+                acc_, nmi_, f1_, ari_ = metrics.evaluateFromLabel(use_acc=False)
                 acc.append(acc_)
                 nmi.append(nmi_)
                 f1.append(f1_)

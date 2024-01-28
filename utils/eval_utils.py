@@ -97,8 +97,8 @@ def merge_nodes_once(manifold, root_coords, tree, group_list, count):
 
 class cluster_metrics:
     def __init__(self, trues, predicts):
-        self.trues = trues
-        self.predicts = predicts
+        self.true_label = trues
+        self.pred_label = predicts
 
     def clusterAcc(self):
         # best mapping between true_label and predict label
@@ -135,7 +135,7 @@ class cluster_metrics:
             ai = [ind for ind, elm in enumerate(self.pred_label) if elm == c2]
             new_predict[ai] = c
 
-        self.new_predict = new_predict
+        self.new_predicts = new_predict
         acc = metrics.accuracy_score(self.true_label, new_predict)
         f1_macro = metrics.f1_score(self.true_label, new_predict, average='macro')
         precision_macro = metrics.precision_score(self.true_label, new_predict, average='macro')
@@ -146,8 +146,8 @@ class cluster_metrics:
         return acc, f1_macro, precision_macro, recall_macro, f1_micro, precision_micro, recall_micro
 
     def evaluateFromLabel(self, use_acc=False):
-        nmi = metrics.normalized_mutual_info_score(self.trues, self.predicts)
-        adjscore = metrics.adjusted_rand_score(self.trues, self.predicts)
+        nmi = metrics.normalized_mutual_info_score(self.true_label, self.pred_label)
+        adjscore = metrics.adjusted_rand_score(self.true_label, self.pred_label)
         if use_acc:
             acc, f1_macro, precision_macro, recall_macro, f1_micro, precision_micro, recall_micro = self.clusterAcc()
             return acc, nmi, f1_macro, adjscore
