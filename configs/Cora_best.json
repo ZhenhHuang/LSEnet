@@ -15,11 +15,11 @@
     "w_decay": 0.3,
     "decay_rate": null,
     "max_nums": [
-        11
+        10
     ],
     "embed_dim": 2,
     "hidden_dim_enc": 16,
-    "hidden_dim": 16,
+    "hidden_dim": 32,
     "dropout": 0.4,
     "nonlin": null,
     "temperature": 0.05,

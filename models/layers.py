@@ -159,7 +159,7 @@ class LorentzAssignment(nn.Module):
         att = torch.sigmoid(att_adj)
         att = torch.mul(adj.to_dense(), att)
         ass = torch.matmul(att, ass)   # (N_k, N_{k-1})
-        logits = torch.log_softmax(ass / self.temperature, dim=-1)
+        logits = torch.log_softmax(ass, dim=-1)
         return logits
 
 
