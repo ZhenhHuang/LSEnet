@@ -23,3 +23,14 @@ class GraphEncoder(nn.Module):
         for layer in self.layers:
             x = layer(x, edge_index)
         return x
+
+
+class FermiDiracDecoder(nn.Module):
+    def __init__(self, r, t):
+        super(FermiDiracDecoder, self).__init__()
+        self.r = r
+        self.t = t
+
+    def forward(self, dist):
+        probs = torch.sigmoid((self.r - dist) / self.t)
+        return probs

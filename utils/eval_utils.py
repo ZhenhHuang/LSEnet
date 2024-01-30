@@ -153,3 +153,9 @@ class cluster_metrics:
             return acc, nmi, f1_macro, adjscore
         else:
             return 0, nmi, 0, adjscore
+
+
+def cal_AUC_AP(scores, trues):
+    auc = metrics.roc_auc_score(trues, scores)
+    ap = metrics.average_precision_score(trues, scores)
+    return auc, ap

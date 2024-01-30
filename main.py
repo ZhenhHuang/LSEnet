@@ -16,9 +16,11 @@ np.random.seed(seed)
 parser = argparse.ArgumentParser(description='Hyperbolic Structural Entropy')
 
 # Experiment settings
-parser.add_argument('--dataset', type=str, default='Cora',
+parser.add_argument('--dataset', type=str, default='FootBall',
                     choices=['Cora', 'Citeseer', 'KarateClub', 'FootBall', 'Computers',
                              'Photo', 'eat', 'bat', 'uat', 'SBM'])
+parser.add_argument('--task', type=str, default='Clustering',
+                    choices=['Clustering', 'LP'])
 parser.add_argument('--root_path', type=str, default='D:\datasets\Graphs')
 parser.add_argument('--batch_size', type=int, default=300)
 parser.add_argument('--eval_freq', type=int, default=100)
@@ -28,21 +30,23 @@ parser.add_argument('--log_path', type=str, default="./results/v2302152230/cls_C
 
 parser.add_argument('--pre_epochs', type=int, default=200, help='the training epochs for pretraining')
 parser.add_argument('--epochs', type=int, default=1500)
-parser.add_argument('--height', type=int, default=3)
+parser.add_argument('--height', type=int, default=2)
 parser.add_argument('--lr_pre', type=float, default=1e-2)
 parser.add_argument('--lr', type=float, default=1e-2)
-parser.add_argument('--w_decay', type=float, default=0)
-parser.add_argument('--decay_rate', type=float, default=None)
-parser.add_argument('--max_nums', type=int, nargs="+", default=[50, 7])
+parser.add_argument('--w_decay', type=float, default=0.0)
+parser.add_argument('--decay_rate', type=float, default=9)
+parser.add_argument('--max_nums', type=int, nargs='+', default=None, help="such as [50, 7]")
 parser.add_argument('--embed_dim', type=int, default=2)
 parser.add_argument('--hidden_dim_enc', type=int, default=16)
 parser.add_argument('--hidden_dim', type=int, default=32)
-parser.add_argument('--dropout', type=float, default=0.5)
+parser.add_argument('--dropout', type=float, default=0.0)
 parser.add_argument('--nonlin', type=str, default=None)
 parser.add_argument('--temperature', type=float, default=0.2)
 parser.add_argument('--n_cluster_trials', type=int, default=5)
+parser.add_argument('--t', type=float, default=1., help='for Fermi-Dirac decoder')
+parser.add_argument('--r', type=float, default=2., help='Fermi-Dirac decoder')
 
-parser.add_argument('--patience', type=int, default=150, help='early stopping patience')
+parser.add_argument('--patience', type=int, default=5, help='early stopping patience')
 parser.add_argument('--save_path', type=str, default='model.pt')
 # GPU
 parser.add_argument('--use_gpu', action='store_false', help='use gpu')

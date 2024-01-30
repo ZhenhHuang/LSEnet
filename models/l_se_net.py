@@ -30,7 +30,7 @@ class LSENet(nn.Module):
         self.layers = nn.ModuleList([])
         if max_nums is None:
             decay_rate = int(np.exp(np.log(num_nodes) / height)) if decay_rate is None else decay_rate
-            max_nums = [num_nodes / (decay_rate ** i) for i in range(1, height)]
+            max_nums = [int(num_nodes / (decay_rate ** i)) for i in range(1, height)]
         for i in range(height - 1):
             self.layers.append(LSENetLayer(self.manifold, embed_dim + 1, hidden_features, max_nums[i],
                                            bias=True, use_att=False, dropout=dropout,

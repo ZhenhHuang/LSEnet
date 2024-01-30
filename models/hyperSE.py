@@ -51,7 +51,7 @@ class HyperSE(nn.Module):
         self.ass_mat = ass_mat
         return self.embeddings[self.height]
 
-    def loss(self, data, device=torch.device('cuda:0'), pretrain=False):
+    def loss(self, data, edge_index, neg_edge_index, device=torch.device('cuda:0'), pretrain=False):
         """_summary_
 
         Args:
@@ -59,7 +59,6 @@ class HyperSE(nn.Module):
             device: torch.Device
         """
         weight = data['weight']
-        edge_index = data['edge_index']
         adj = data['adj'].to(device)
         degrees = data['degrees']
         features = data['feature']
@@ -75,7 +74,6 @@ class HyperSE(nn.Module):
             ass_mat[k] = ass_mat[k + 1] @ clu_mat[k + 1]
             vol_dict[k] = torch.einsum('ij, i->j', ass_mat[k], degrees)
 
-        neg_edge_index = data['neg_edge_index'].to(device)
         edges = torch.concat([edge_index, neg_edge_index], dim=-1)
         prob = self.manifold.dist(embeddings[self.height][edges[0]], embeddings[self.height][edges[1]])
         prob = torch.sigmoid((2. - prob) / 1.)
