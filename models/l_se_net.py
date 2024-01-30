@@ -15,8 +15,10 @@ from torch_geometric.utils import dropout_edge
 
 class LSENet(nn.Module):
     def __init__(self, manifold, in_features, hidden_dim_enc, hidden_features, num_nodes, height=3, temperature=0.1,
-                 embed_dim=64, dropout=0.5, nonlin='relu', decay_rate=None):
+                 embed_dim=64, dropout=0.5, nonlin='relu', decay_rate=None, max_nums=None):
         super(LSENet, self).__init__()
+        if max_nums is not None:
+            assert len(max_nums) == height - 1, "length of max_nums must equal height-1."
         self.manifold = manifold
         self.nonlin = select_activation(nonlin) if nonlin is not None else None
         self.temperature = temperature
@@ -26,13 +28,14 @@ class LSENet(nn.Module):
         self.embed_layer = GraphEncoder(self.manifold, 2, in_features + 1, hidden_dim_enc, embed_dim + 1, use_att=False,
                                                      use_bias=True, dropout=dropout, nonlin=self.nonlin)
         self.layers = nn.ModuleList([])
-        decay_rate = int(np.exp(np.log(num_nodes) / height)) if decay_rate is None else decay_rate
-        self.num_max = int(num_nodes / decay_rate)
+        if max_nums is None:
+            decay_rate = int(np.exp(np.log(num_nodes) / height)) if decay_rate is None else decay_rate
+            max_nums = [num_nodes / (decay_rate ** i) for i in range(1, height)]
         for i in range(height - 1):
-            self.layers.append(LSENetLayer(self.manifold, embed_dim + 1, hidden_features, self.num_max,
+            self.layers.append(LSENetLayer(self.manifold, embed_dim + 1, hidden_features, max_nums[i],
                                            bias=True, use_att=False, dropout=dropout,
                                            nonlin=self.nonlin, temperature=self.temperature))
-            self.num_max = int(self.num_max / decay_rate)
+            # self.num_max = int(self.num_max / decay_rate)
 
     def forward(self, x, edge_index):
 

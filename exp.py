@@ -46,7 +46,8 @@ class Exp:
                             height=self.configs.height, temperature=self.configs.temperature,
                             embed_dim=self.configs.embed_dim, dropout=self.configs.dropout,
                             nonlin=self.configs.nonlin,
-                            decay_rate=self.configs.decay_rate).to(device)
+                            decay_rate=self.configs.decay_rate,
+                            max_nums=self.configs.max_nums).to(device)
             optimizer = RiemannianAdam(model.parameters(), lr=self.configs.lr, weight_decay=self.configs.w_decay)
             scheduler = StepLR(optimizer, step_size=200, gamma=0.8)
 
