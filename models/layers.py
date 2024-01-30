@@ -194,5 +194,5 @@ class LSENetLayer(nn.Module):
         x_assigned = support_t / denorm
         adj = ass.exp().t() @ adj @ ass.exp()
         adj = adj - torch.eye(adj.shape[0]).to(adj.device) * adj.diag()
-        # adj = gumbel_sigmoid(adj, tau=self.temperature)
+        adj = gumbel_sigmoid(adj, tau=self.temperature)
         return x_assigned, adj, ass.exp()

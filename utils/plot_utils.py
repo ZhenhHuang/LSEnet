@@ -34,7 +34,7 @@ def geodesic_fn(x, y, nb_points=100):
 def plot_geodesic(x, y, ax):
     """Plots geodesic between x and y."""
     points = geodesic_fn(x, y)
-    ax.plot(points[:, 0], points[:, 1], color='black', linewidth=0.8, alpha=1.)
+    ax.plot(points[:, 0], points[:, 1], color='black', linewidth=0.3, alpha=1.)
 
 
 def plot_leaves(tree, manifold, embeddings, labels, height, save_path=None, colors_dict=None):
@@ -49,7 +49,7 @@ def plot_leaves(tree, manifold, embeddings, labels, height, save_path=None, colo
     colors_dict = get_colors(labels, color_seed=1234) if colors_dict is None else colors_dict
     colors = [colors_dict[k] for k in labels]
     embeddings = manifold.to_poincare(embeddings).numpy()
-    scatter = ax.scatter(embeddings[:n, 0], embeddings[:n, 1], c=colors, s=300, alpha=1.0)
+    scatter = ax.scatter(embeddings[:n, 0], embeddings[:n, 1], c=colors, s=80, alpha=1.0)
     # legend = ax.legend(*scatter.legend_elements(), loc="lower left", title="Classes")
     # ax.add_artist(legend)
     # ax.scatter(np.array([0]), np.array([0]), c='black')

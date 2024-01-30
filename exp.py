@@ -51,7 +51,6 @@ class Exp:
                             decay_rate=self.configs.decay_rate,
                             max_nums=self.configs.max_nums).to(device)
             optimizer = RiemannianAdam(model.parameters(), lr=self.configs.lr, weight_decay=self.configs.w_decay)
-            scheduler = StepLR(optimizer, step_size=200, gamma=0.8)
             if self.configs.task == 'Clustering':
                 nmi, ari = self.train_clu(data, model, optimizer, logger, device, exp_iter)
                 total_nmi.append(nmi)
@@ -72,6 +71,7 @@ class Exp:
     def train_clu(self, data, model, optimizer, logger, device, exp_iter):
         best_cluster_result = {}
         best_cluster = {'acc': 0, 'nmi': 0, 'f1': 0, 'ari': 0}
+        scheduler = StepLR(optimizer, step_size=500, gamma=0.5)
         pretrained = True
         if pretrained:
             # model.load_state_dict(torch.load(f'checkpoints/{self.configs.save_path}'))
