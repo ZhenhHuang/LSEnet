@@ -1,8 +1,13 @@
 # LSEnet
 
-Lorentz Structural Entropy Neural Network for Deep Graph Clustering
+LSEnet: Lorentz Structural Entropy Neural Network for Deep Graph Clustering.
 
 ## Get Started
+
+```bash
+cd ./LSEnet
+python main.py
+```
 
 ## Visualization
 
