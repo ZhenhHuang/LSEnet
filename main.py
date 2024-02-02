@@ -14,7 +14,7 @@ random.seed(seed)
 torch.manual_seed(seed)
 np.random.seed(seed)
 
-parser = argparse.ArgumentParser(description='Hyperbolic Structural Entropy')
+parser = argparse.ArgumentParser(description='Lorentz Structural Entropy')
 
 # Experiment settings
 parser.add_argument('--dataset', type=str, default='FootBall')
