@@ -157,16 +157,16 @@ class Exp:
                                     save_path=f"./results/{self.configs.dataset}/{self.configs.dataset}_hyp_h{self.configs.height}_{exp_iter}_true.pdf")
         # plot_nx_graph(tree_graph, root=data['num_nodes'],
         #               save_path=f"./results/{self.configs.dataset}/{self.configs.dataset}_hyp_h{self.configs.height}_{exp_iter}_nx.pdf")
-        # predicts = decoding_cluster_from_tree(manifold, tree_graph,
-        #                                       data['num_classes'], data['num_nodes'],
-        #                                       height=self.configs.height)
-        # trues = data['labels']
-        # metrics = cluster_metrics(trues, predicts)
-        # metrics.clusterAcc()
-        # new_pred = metrics.new_predicts
-        # plot_leaves(tree_graph, manifold, embeddings, new_pred, height=self.configs.height,
-        #                             save_path=f"./results/{self.configs.dataset}/{self.configs.dataset}_hyp_h{self.configs.height}_{exp_iter}_pred.pdf",
-        #             colors_dict=color_dict)
+        predicts = decoding_cluster_from_tree(manifold, tree_graph,
+                                              data['num_classes'], data['num_nodes'],
+                                              height=self.configs.height)
+        trues = data['labels']
+        metrics = cluster_metrics(trues, predicts)
+        metrics.clusterAcc()
+        new_pred = metrics.new_predicts
+        plot_leaves(tree_graph, manifold, embeddings, new_pred, height=self.configs.height,
+                                    save_path=f"./results/{self.configs.dataset}/{self.configs.dataset}_hyp_h{self.configs.height}_{exp_iter}_pred.pdf",
+                    colors_dict=color_dict)
         for k, result in best_cluster_result.items():
             acc, nmi, f1, ari = result
             logger.info(
