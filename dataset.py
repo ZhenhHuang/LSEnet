@@ -138,7 +138,6 @@ class SBMDataset:
                 else:
                     p[i, j] = p_out
 
-        # 生成 SBM 数据集
         data = StochasticBlockModelDataset(root,
                                               [num_nodes / num_classes] * num_classes,
                                               p, num_nodes=num_nodes)[0]
