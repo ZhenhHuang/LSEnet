@@ -3,15 +3,6 @@ import time
 from datetime import timedelta
 
 
-class DotDict(dict):
-    """dict.key access"""
-    def __getattr__(*args):  # nested
-        val = dict.get(*args)
-        return DotDict(val) if type(val) is dict else val
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
-
-
 def create_logger(filepath, colored=False, debug=False):
     log_formatter = LogFormatter(colored=colored)
 
