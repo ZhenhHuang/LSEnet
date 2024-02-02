@@ -33,9 +33,8 @@ class HyperSE(nn.Module):
 
     def forward(self, data, device=torch.device('cuda:0')):
         features = data['feature'].to(device)
-        # edge_index = data['edge_index'].to(device)
-        edge_index = data['adj'].to(device)
-        embeddings, clu_mat = self.encoder(features, edge_index)
+        adj = data['adj'].to(device)
+        embeddings, clu_mat = self.encoder(features, adj)
         self.embeddings = {}
         for height, x in embeddings.items():
             self.embeddings[height] = x.detach()
@@ -46,7 +45,6 @@ class HyperSE(nn.Module):
             idx = v.max(1)[1]
             t = torch.zeros_like(v)
             t[torch.arange(t.shape[0]), idx] = 1.
-            # ass_mat[k] = gumbel_softmax(v.log(), temperature=self.tau, hard=True)
             ass_mat[k] = t
         self.ass_mat = ass_mat
         return self.embeddings[self.height]
@@ -63,7 +61,6 @@ class HyperSE(nn.Module):
         degrees = data['degrees']
         features = data['feature']
 
-        # embeddings, clu_mat = self.encoder(features, edge_index)
         embeddings, clu_mat = self.encoder(features, adj)
 
         se_loss = 0
@@ -80,19 +77,8 @@ class HyperSE(nn.Module):
         label = torch.concat([torch.ones(edge_index.shape[-1]), torch.zeros(neg_edge_index.shape[-1])]).to(device)
         lp_loss = F.binary_cross_entropy(prob, label)
 
-        as_loss = 0
-        # for k in range(1, self.height):
-        #     e1 = embeddings[k + 1]  # N_k+1
-        #     e2 = embeddings[k]  # N_k
-        #     index = torch.stack([torch.arange(e1.shape[0]).to(device), clu_mat[k + 1].argmax(-1)])
-        #     prob = self.manifold.dist(e1[index[0]], e2[index[1]])
-        #     prob = torch.sigmoid((2. - prob) / 1.)
-        #     label = torch.ones(index.shape[-1]).to(device)
-        #     as_loss += F.binary_cross_entropy(prob, label)
-        # as_loss = as_loss / (self.height - 1)
-
         if pretrain:
-            return as_loss + self.manifold.dist0(embeddings[0]) + lp_loss
+            return self.manifold.dist0(embeddings[0]) + lp_loss
 
         for k in range(1, self.height + 1):
             vol_parent = torch.einsum('ij, j->i', clu_mat[k], vol_dict[k - 1])  # (N_k, )
@@ -103,4 +89,4 @@ class HyperSE(nn.Module):
             delta_vol = vol_dict[k] - weight_sum    # (N_k, )
             se_loss += torch.sum(delta_vol * log_vol_ratio_k)
         se_loss = -1 / vol_G * se_loss
-        return se_loss + as_loss + self.manifold.dist0(embeddings[0]) + lp_loss
+        return se_loss + self.manifold.dist0(embeddings[0]) + lp_loss
