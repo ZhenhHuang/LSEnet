@@ -64,9 +64,6 @@ def gumbel_softmax(logits, temperature=0.2, hard=False):
 
 
 def gumbel_sigmoid(logits, tau: float = 1, hard: bool = False, threshold: float = 0.5):
-    """
-    https://github.com/AngelosNal/PyTorch-Gumbel-Sigmoid/blob/main/gumbel_sigmoid.py
-    """
     gumbels = (
         -torch.empty_like(logits, memory_format=torch.legacy_contiguous_format).exponential_().log()
     )  # ~Gumbel(0, 1)
