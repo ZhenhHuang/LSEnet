@@ -99,12 +99,16 @@ class Exp:
             if epoch % self.configs.eval_freq == 0:
                 logger.info("-----------------------Evaluation Start---------------------")
                 model.eval()
+                decode_time = time.time()
                 embeddings = model(data, device).detach().cpu()
                 manifold = model.manifold.cpu()
+                # decode_time = time.time()
                 tree = construct_tree(torch.tensor([i for i in range(data['num_nodes'])]).long(),
                                       manifold,
                                       model.embeddings, model.ass_mat, height=self.configs.height,
                                       num_nodes=embeddings.shape[0])
+                decode_time = time.time() - decode_time
+                logger.info(f"Decoding cost time: {decode_time: .3f} s")
                 tree_graph = to_networkx_tree(tree, manifold, height=self.configs.height)
                 predicts = decoding_cluster_from_tree(manifold, tree_graph,
                                                       data['num_classes'], data['num_nodes'],

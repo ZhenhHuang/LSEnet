@@ -6,6 +6,7 @@ import argparse
 from exp import Exp
 from logger import create_logger
 import json
+from utils.train_utils import DotDict
 
 
 seed = 3047
@@ -16,13 +17,10 @@ np.random.seed(seed)
 parser = argparse.ArgumentParser(description='Hyperbolic Structural Entropy')
 
 # Experiment settings
-parser.add_argument('--dataset', type=str, default='Cora',
-                    choices=['Cora', 'Citeseer', 'KarateClub', 'FootBall', 'Computers',
-                             'Photo', 'eat', 'bat', 'uat', 'SBM'])
+parser.add_argument('--dataset', type=str, default='FootBall')
 parser.add_argument('--task', type=str, default='Clustering',
-                    choices=['Clustering', 'LP'])
+                    choices=['Clustering'])
 parser.add_argument('--root_path', type=str, default='D:\datasets\Graphs')
-parser.add_argument('--batch_size', type=int, default=300)
 parser.add_argument('--eval_freq', type=int, default=10)
 parser.add_argument('--exp_iters', type=int, default=5)
 parser.add_argument('--version', type=str, default="run")
@@ -55,8 +53,14 @@ parser.add_argument('--devices', type=str, default='0,1',
                     help='device ids of multiple gpus')
 
 configs = parser.parse_args()
-with open(f'./configs/{configs.dataset}.json', 'wt') as f:
-    json.dump(vars(configs), f, indent=4)
+# with open(f'./configs/{configs.dataset}.json', 'wt') as f:
+#     json.dump(vars(configs), f, indent=4)
+configs_dict = vars(configs)
+with open(f'./configs/{configs.dataset}.json', 'rt') as f:
+    configs_dict.update(json.load(f))
+configs = DotDict(configs_dict)
+f.close()
+
 log_path = f"./results/{configs.version}/{configs.dataset}.log"
 configs.log_path = log_path
 if not os.path.exists(f"./results"):
