@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(description='Hyperbolic Structural Entropy')
 parser.add_argument('--dataset', type=str, default='FootBall')
 parser.add_argument('--task', type=str, default='Clustering',
                     choices=['Clustering'])
-parser.add_argument('--root_path', type=str, default='D:\datasets\Graphs')
+parser.add_argument('--root_path', type=str, default='./datasets')
 parser.add_argument('--eval_freq', type=int, default=10)
 parser.add_argument('--exp_iters', type=int, default=5)
 parser.add_argument('--version', type=str, default="run")

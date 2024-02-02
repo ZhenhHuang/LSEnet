@@ -1,8 +1,7 @@
 {
     "dataset": "FootBall",
     "task": "Clustering",
-    "root_path": "D:\\datasets\\Graphs",
-    "batch_size": 300,
+    "root_path": "./datasets",
     "eval_freq": 100,
     "exp_iters": 5,
     "version": "run",
