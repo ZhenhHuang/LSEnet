@@ -1,5 +1,4 @@
 import torch
-from utils.lca import hyp_lca, equiv_weights
 from utils.utils import Frechet_mean_poincare
 import networkx as nx
 import numpy as np
