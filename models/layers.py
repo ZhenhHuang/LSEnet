@@ -88,22 +88,6 @@ class LorentzAgg(nn.Module):
             self.bias = nn.Parameter(torch.zeros(()) + 20)
             self.scale = nn.Parameter(torch.zeros(()) + math.sqrt(in_features))
 
-    # def forward(self, x, edge_index):
-        # edge_index, _ = add_self_loops(edge_index, num_nodes=x.shape[0])
-        # if self.use_att:
-        #     query = self.query_linear(x)[edge_index[0]]
-        #     key = self.key_linear(x)[edge_index[1]]
-        #     att_adj = 2 + 2 * self.manifold.inner(query, key, dim=-1, keepdim=True)     # (E, 1)
-        #     att_adj = att_adj / self.scale + self.bias
-        #     att_adj = torch.sigmoid(att_adj)
-        #     support_t = scatter_sum(att_adj * x[edge_index[1]], index=edge_index[0], dim=0)
-        # else:
-        #     support_t = scatter_sum(x[edge_index[1]], index=edge_index[0], dim=0)
-        #
-        # denorm = (-self.manifold.inner(None, support_t, keepdim=True))
-        # denorm = denorm.abs().clamp_min(1e-8).sqrt()
-        # output = support_t / denorm
-        # return output
     def forward(self, x, adj):
         if self.use_att:
             query = self.query_linear(x)
@@ -141,15 +125,6 @@ class LorentzAssignment(nn.Module):
         self.bias = nn.Parameter(torch.zeros(()) + 20)
         self.scale = nn.Parameter(torch.zeros(()) + math.sqrt(hidden_features))
 
-    # def forward(self, x, edge_index):
-    #     x = self.proj(x)
-    #     ass = self.assign_linear(x, edge_index)
-    #     att = 2 + 2 * self.manifold.inner(x[edge_index[0]], x[edge_index[1]], keepdim=True)   # (E, 1), -dist**2
-    #     att = scatter_softmax(att / self.temperature, index=edge_index[0], dim=0)
-    #     ass = index2adjacency(x.shape[0], edge_index, att) @ ass   # (N_k, N_{k-1})
-    #     logits = torch.log_softmax(ass, dim=-1)
-    #     return logits
-
     def forward(self, x, adj):
         ass = self.assign_linear(self.proj(x), adj).narrow(-1, 1, self.num_assign)
         query = self.query_linear(x)
@@ -171,20 +146,6 @@ class LSENetLayer(nn.Module):
         self.assignor = LorentzAssignment(manifold, in_features, hidden_features, num_assign, use_att=use_att, bias=bias,
                                           dropout=dropout, nonlin=nonlin, temperature=temperature)
         self.temperature = temperature
-
-    # def forward(self, x, edge_index):
-    #     ass = self.assignor(x, edge_index)
-    #     ass_hard = gumbel_softmax(ass, hard=True, temperature=self.temperature)
-    #
-    #     support_t = ass.exp().t() @ x
-    #     denorm = (-self.manifold.inner(None, support_t, keepdim=True))
-    #     denorm = denorm.abs().clamp_min(1e-8).sqrt()
-    #     x_assigned = support_t / denorm
-    #
-    #     adj = index2adjacency(x.shape[0], edge_index)
-    #     adj = ass_hard.t() @ adj @ ass_hard
-    #     edge_index_assigned = adjacency2index(adj)
-    #     return x_assigned, edge_index_assigned, ass_hard
 
     def forward(self, x, adj):
         ass = self.assignor(x, adj)
