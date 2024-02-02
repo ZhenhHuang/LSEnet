@@ -24,7 +24,7 @@ parser.add_argument('--root_path', type=str, default='./datasets')
 parser.add_argument('--eval_freq', type=int, default=10)
 parser.add_argument('--exp_iters', type=int, default=5)
 parser.add_argument('--version', type=str, default="run")
-parser.add_argument('--log_path', type=str, default="./results/Cora.log")
+parser.add_argument('--log_path', type=str, default="./results/FootBall.log")
 
 parser.add_argument('--pre_epochs', type=int, default=200, help='the training epochs for pretraining')
 parser.add_argument('--epochs', type=int, default=2000)

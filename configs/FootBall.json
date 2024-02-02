@@ -5,7 +5,7 @@
     "eval_freq": 100,
     "exp_iters": 5,
     "version": "run",
-    "log_path": "./results/v2302152230/cls_Cora.log",
+    "log_path": "./results/FottBall.log",
     "pre_epochs": 200,
     "epochs": 1500,
     "height": 2,
