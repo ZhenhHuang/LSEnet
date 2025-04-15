@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="b242d1ee-f224-47e4-9c2a-db99952bcf58" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/pics/model.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pics/results.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pics/tree.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pics/visual.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dataset.py" beforeDir="false" afterPath="$PROJECT_DIR$/dataset.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/exp.py" beforeDir="false" afterPath="$PROJECT_DIR$/exp.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/hyperSE.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/hyperSE.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/layers.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/layers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/train_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/train_utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/utils.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Jupyter Notebook" />
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 5
+}</component>
+  <component name="ProjectId" id="2ZR568dsUQcfQnkUzmxpo0BcL3L" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+    <option name="sortByType" value="true" />
+    <option name="sortKey" value="BY_TYPE" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Python.codingtree.executor": "Run",
+    "Python.dataset.executor": "Run",
+    "Python.main.executor": "Run",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "C:/Users/98311/Documents/GitHub/LSEnet",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "CodeWithMe",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\98311\Documents\GitHub\LSEnet" />
+      <recent name="C:\Users\98311\Documents\GitHub\LSEnet\datasets" />
+      <recent name="C:\Users\98311\Documents\GitHub\LSEnet\configs" />
+      <recent name="C:\Users\98311\Documents\GitHub\LSEnet\images" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\98311\Documents\GitHub\LSEnet\images" />
+      <recent name="C:\Users\98311\Documents\GitHub\HyperSE4GC\results\KarateClub" />
+      <recent name="C:\Users\98311\Documents\GitHub\HyperSE4GC\utils" />
+      <recent name="C:\Users\98311\Documents\GitHub\HyperSE4GC\models" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Python.main">
+    <configuration name="codingtree" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="HyperSE4GC" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/codingtree.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="dataset" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="HyperSE4GC" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/dataset.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="HyperSE4GC" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Python.codingtree" />
+      <item itemvalue="Python.dataset" />
+      <item itemvalue="Python.main" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.main" />
+        <item itemvalue="Python.codingtree" />
+        <item itemvalue="Python.dataset" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-python-sdk-67fca87a943a-c986f194a52a-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-233.11799.259" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="b242d1ee-f224-47e4-9c2a-db99952bcf58" name="Changes" comment="" />
+      <created>1702371873062</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1702371873062</updated>
+      <workItem from="1702371876644" duration="75000" />
+      <workItem from="1703326600886" duration="8080000" />
+      <workItem from="1703392687283" duration="4271000" />
+      <workItem from="1703661718483" duration="109000" />
+      <workItem from="1703661992284" duration="2591000" />
+      <workItem from="1703677210063" duration="9006000" />
+      <workItem from="1703906186735" duration="26492000" />
+      <workItem from="1703945640136" duration="3574000" />
+      <workItem from="1703991500792" duration="104430000" />
+      <workItem from="1704724706917" duration="20609000" />
+      <workItem from="1704862698622" duration="48847000" />
+      <workItem from="1705036627511" duration="1867000" />
+      <workItem from="1705070174865" duration="2667000" />
+      <workItem from="1705201648275" duration="15188000" />
+      <workItem from="1705384159570" duration="9209000" />
+      <workItem from="1705477843456" duration="28495000" />
+      <workItem from="1705555097317" duration="27514000" />
+      <workItem from="1705651196673" duration="26801000" />
+      <workItem from="1705734353010" duration="16732000" />
+      <workItem from="1705818385889" duration="18741000" />
+      <workItem from="1705910050626" duration="20498000" />
+      <workItem from="1705990519539" duration="18746000" />
+      <workItem from="1706155557879" duration="14323000" />
+      <workItem from="1706171320405" duration="17542000" />
+      <workItem from="1706267965659" duration="9828000" />
+      <workItem from="1706335776773" duration="27226000" />
+      <workItem from="1706415012129" duration="34159000" />
+      <workItem from="1706520082458" duration="7412000" />
+      <workItem from="1706592597176" duration="33232000" />
+      <workItem from="1706671662423" duration="836000" />
+      <workItem from="1706766311402" duration="20746000" />
+      <workItem from="1706840597988" duration="3150000" />
+      <workItem from="1706870095057" duration="1370000" />
+      <workItem from="1708479907524" duration="433000" />
+      <workItem from="1710815122857" duration="33000" />
+      <workItem from="1711351911085" duration="7060000" />
+      <workItem from="1711553136222" duration="1055000" />
+      <workItem from="1712416556067" duration="176000" />
+      <workItem from="1729217924189" duration="1286000" />
+      <workItem from="1729224692706" duration="13365000" />
+      <workItem from="1729249683789" duration="11235000" />
+      <workItem from="1729606517650" duration="1185000" />
+      <workItem from="1729685332429" duration="3007000" />
+      <workItem from="1729697864716" duration="7000" />
+      <workItem from="1730810057342" duration="171000" />
+      <workItem from="1731762192964" duration="460000" />
+      <workItem from="1732516646811" duration="67000" />
+      <workItem from="1744723935677" duration="647000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/LSEnet$codingtree.coverage" NAME="codingtree Coverage Results" MODIFIED="1706770690114" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/HyperSE4GC$main.coverage" NAME="main Coverage Results" MODIFIED="1706521968906" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/LSEnet$dataset.coverage" NAME="dataset Coverage Results" MODIFIED="1706672178775" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/LSEnet$main.coverage" NAME="main Coverage Results" MODIFIED="1730810133492" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+  </component>
+</project>
